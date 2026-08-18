@@ -1,0 +1,18 @@
+import { getSupabase } from "./supabase";
+
+// 경로 규칙: <elder_profile_id>/<yyyy-mm-dd>/<uuid>.<ext> — docs/기능설계서.md §Storage
+export async function uploadToBucket(bucket: "voice" | "letters", elderProfileId: string, blob: Blob, ext: string) {
+  const supabase = getSupabase();
+  const date = new Date().toISOString().slice(0, 10);
+  const path = `${elderProfileId}/${date}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from(bucket).upload(path, blob, { contentType: blob.type });
+  if (error) throw error;
+  return path;
+}
+
+export async function getSignedUrl(bucket: "voice" | "letters", path: string, expiresInSeconds = 3600) {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresInSeconds);
+  if (error) throw error;
+  return data.signedUrl;
+}

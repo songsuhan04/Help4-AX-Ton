@@ -1,6 +1,5 @@
 {
-  "rewrites": [
-    { "source": "/", "destination": "/demo/index_0812.html" },
-    { "source": "/demo", "destination": "/demo/index_0812.html" }
-  ]
+  "buildCommand": "cd demo/v1 && npm install && npm run build",
+  "outputDirectory": "demo/v1/dist",
+  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }]
 }

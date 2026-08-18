@@ -17,6 +17,7 @@ export default function Reg() {
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [relationship, setRelationship] = useState("");
+  const [phone, setPhone] = useState("");
   const [checkinTime, setCheckinTime] = useState("08:00");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,6 +37,7 @@ export default function Reg() {
           name,
           birth_date: birthDate,
           relationship,
+          phone: phone || null,
           checkin_time: checkinTime,
         })
         .select("id")
@@ -67,6 +69,10 @@ export default function Reg() {
         <div className="g-field">
           <label>나와의 관계</label>
           <input value={relationship} onChange={(e) => setRelationship(e.target.value)} placeholder="예: 어머니" required />
+        </div>
+        <div className="g-field">
+          <label>어르신 전화번호 (전화하기 버튼에 사용)</label>
+          <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="010-0000-0000" />
         </div>
         <div className="g-field">
           <label>안부 묻는 시각</label>

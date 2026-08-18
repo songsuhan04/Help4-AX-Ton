@@ -4,6 +4,7 @@ import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
 import { RiskDot } from "../components/RiskDot";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
+import { getSignedUrl } from "../lib/storage";
 import type { RiskLevel } from "../config/riskConstants";
 
 export const SCREEN_ID = "gDetail";
@@ -12,6 +13,7 @@ interface ElderDetail {
   id: string;
   name: string;
   relationship: string;
+  phone: string | null;
   priority_status: RiskLevel;
 }
 
@@ -20,11 +22,20 @@ interface RiskRow {
   level: RiskLevel;
 }
 
+interface LetterRow {
+  id: string;
+  title: string;
+  video_url: string;
+  sent_at: string;
+  signedUrl?: string;
+}
+
 export default function GDetail() {
   const { elderId } = useParams<{ elderId: string }>();
   const navigate = useNavigate();
   const [elder, setElder] = useState<ElderDetail | null>(null);
   const [risk, setRisk] = useState<RiskRow | null>(null);
+  const [letters, setLetters] = useState<LetterRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +44,7 @@ export default function GDetail() {
     const supabase = getSupabase();
     supabase
       .from("elder_profile")
-      .select("id,name,relationship,priority_status")
+      .select("id,name,relationship,phone,priority_status")
       .eq("id", elderId)
       .single()
       .then(({ data, error }) => {
@@ -48,6 +59,20 @@ export default function GDetail() {
       .limit(1)
       .maybeSingle()
       .then(({ data }) => setRisk((data as RiskRow) ?? null));
+    // 어르신이 보낸 영상편지 — 보호자도 확인할 수 있어야 함
+    supabase
+      .from("video_letter")
+      .select("id,title,video_url,sent_at")
+      .eq("sender_type", "elder")
+      .eq("sender_id", elderId)
+      .order("sent_at", { ascending: false })
+      .then(async ({ data }) => {
+        const rows = (data ?? []) as LetterRow[];
+        const withUrls = await Promise.all(
+          rows.map(async (row) => ({ ...row, signedUrl: await getSignedUrl("letters", row.video_url).catch(() => undefined) }))
+        );
+        setLetters(withUrls);
+      });
   }, [elderId]);
 
   async function markChecked() {
@@ -81,7 +106,19 @@ export default function GDetail() {
       {risk ? <p className="g-sub">{risk.reason}</p> : <p className="g-sub">특별한 위험 신호가 없습니다.</p>}
 
       <div style={{ display: "flex", gap: 8 }}>
-        <button className="g-button" disabled={busy} style={{ flex: 1 }}>전화하기</button>
+        {elder.phone ? (
+          <a
+            className="g-button"
+            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+            href={`tel:${elder.phone}`}
+          >
+            전화하기
+          </a>
+        ) : (
+          <button className="g-button" disabled style={{ flex: 1 }} title="등록된 전화번호가 없습니다">
+            전화하기
+          </button>
+        )}
         <button className="g-button g-button--secondary" disabled={busy} onClick={markChecked} style={{ flex: 1 }}>
           확인했어요
         </button>
@@ -93,6 +130,20 @@ export default function GDetail() {
       <button className="g-button g-button--secondary" onClick={reinvite} disabled={busy}>
         재초대 (기기 변경 시)
       </button>
+
+      <div style={{ marginTop: 24 }}>
+        <div className="g-header">{elder.name}님이 보낸 영상편지</div>
+        {letters.length === 0 && <p className="g-sub">아직 받은 영상편지가 없습니다.</p>}
+        {letters.map((letter) => (
+          <div key={letter.id} style={{ background: "var(--mist)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
+            <div style={{ fontSize: 13, color: "var(--ink3)", marginBottom: 6 }}>
+              {new Date(letter.sent_at).toLocaleString("ko-KR")}
+            </div>
+            <div style={{ marginBottom: 8 }}>{letter.title}</div>
+            {letter.signedUrl && <video src={letter.signedUrl} controls style={{ width: "100%", borderRadius: 8 }} />}
+          </div>
+        ))}
+      </div>
     </AppShell>
   );
 }

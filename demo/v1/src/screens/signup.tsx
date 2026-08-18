@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
+import { getErrorMessage } from "../lib/errors";
 
 export const SCREEN_ID = "signup";
 
@@ -29,7 +30,7 @@ export default function Signup() {
       if (error) throw error;
       setCodeSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "인증 코드 발송에 실패했습니다");
+      setError(getErrorMessage(err, "인증 코드 발송에 실패했습니다"));
     } finally {
       setLoading(false);
     }
@@ -44,7 +45,7 @@ export default function Signup() {
       if (error) throw error;
       setStep(2);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "인증 코드가 올바르지 않습니다");
+      setError(getErrorMessage(err, "인증 코드가 올바르지 않습니다"));
     } finally {
       setLoading(false);
     }
@@ -63,7 +64,7 @@ export default function Signup() {
       if (error) throw error;
       navigate("/guardian/elders/new", { state: { fromSignup: true } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "비밀번호 설정에 실패했습니다");
+      setError(getErrorMessage(err, "비밀번호 설정에 실패했습니다"));
     } finally {
       setLoading(false);
     }

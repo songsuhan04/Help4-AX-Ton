@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
+import { getErrorMessage } from "../lib/errors";
 
 export const SCREEN_ID = "gStart";
 
@@ -22,7 +23,7 @@ export default function GStart() {
       if (error) throw error;
       navigate("/guardian");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "로그인에 실패했습니다");
+      setError(getErrorMessage(err, "로그인에 실패했습니다"));
     } finally {
       setLoading(false);
     }

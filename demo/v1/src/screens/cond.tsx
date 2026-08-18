@@ -5,6 +5,7 @@ import { BackButton } from "../components/BackButton";
 import { Chip } from "../components/Chip";
 import { CONDITION_CATEGORIES, CONDITIONS, buildDailyQuestions, getConditionsByCategory } from "../domain/conditions";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
+import { getErrorMessage } from "../lib/errors";
 
 export const SCREEN_ID = "cond";
 
@@ -39,7 +40,7 @@ export default function Cond() {
       }
       navigate(`/guardian/elders/${elderId}/invite`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "지병 저장에 실패했습니다");
+      setError(getErrorMessage(err, "지병 저장에 실패했습니다"));
     } finally {
       setLoading(false);
     }

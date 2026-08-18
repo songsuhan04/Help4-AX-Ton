@@ -5,6 +5,7 @@ import { BackButton } from "../components/BackButton";
 import { createTestBlob, startRecording, type RecordingHandle } from "../lib/recorder";
 import { uploadToBucket } from "../lib/storage";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
+import { getErrorMessage } from "../lib/errors";
 
 export const SCREEN_ID = "gLetter";
 
@@ -58,7 +59,7 @@ export default function GLetter() {
       if (error) throw error;
       navigate(`/guardian/elders/${elderId}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "전송에 실패했습니다");
+      setError(getErrorMessage(err, "전송에 실패했습니다"));
     } finally {
       setSending(false);
     }

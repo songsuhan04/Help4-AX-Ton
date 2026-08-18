@@ -4,6 +4,7 @@ import { AppShell } from "../components/AppShell";
 import { SpeakButton } from "../components/SpeakButton";
 import { redeemInvite } from "../lib/elderSession";
 import { supabaseConfigured } from "../lib/supabase";
+import { getErrorMessage } from "../lib/errors";
 
 export const SCREEN_ID = "eInvited";
 
@@ -21,7 +22,7 @@ export default function EInvited() {
     }
     redeemInvite(token)
       .then((result) => setName(result.name))
-      .catch((err) => setError(err instanceof Error ? err.message : "연결에 실패했습니다"))
+      .catch((err) => setError(getErrorMessage(err, "연결에 실패했습니다")))
       .finally(() => setLoading(false));
   }, [token]);
 

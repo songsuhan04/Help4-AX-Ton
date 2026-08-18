@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
+import { getErrorMessage } from "../lib/errors";
 
 export const SCREEN_ID = "reg";
 
@@ -42,7 +43,7 @@ export default function Reg() {
       if (error) throw error;
       navigate(`/guardian/elders/${data.id}/conditions`, { state: { fromSignup } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "어르신 등록에 실패했습니다");
+      setError(getErrorMessage(err, "어르신 등록에 실패했습니다"));
     } finally {
       setLoading(false);
     }

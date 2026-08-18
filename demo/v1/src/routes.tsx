@@ -8,6 +8,7 @@ import Reg from "./screens/reg";
 import Cond from "./screens/cond";
 import Invite from "./screens/invite";
 import GList from "./screens/gList";
+import GAdmin from "./screens/gAdmin";
 import GDetail from "./screens/gDetail";
 import GLetter from "./screens/gLetter";
 import EInvited from "./screens/eInvited";
@@ -29,6 +30,7 @@ export function AppRoutes() {
       <Route path="/guardian/elders/:elderId/conditions" element={<GuardianRoute><Cond /></GuardianRoute>} />
       <Route path="/guardian/elders/:elderId/invite" element={<GuardianRoute><Invite /></GuardianRoute>} />
       <Route path="/guardian" element={<GuardianRoute><GList /></GuardianRoute>} />
+      <Route path="/admin" element={<GuardianRoute><GAdmin /></GuardianRoute>} />
       <Route path="/guardian/elders/:elderId" element={<GuardianRoute><GDetail /></GuardianRoute>} />
       <Route path="/guardian/elders/:elderId/letter" element={<GuardianRoute><GLetter /></GuardianRoute>} />
 

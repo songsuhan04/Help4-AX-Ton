@@ -19,13 +19,15 @@ export default function GList() {
   const [elders, setElders] = useState<ElderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!supabaseConfigured) {
       setLoading(false);
       return;
     }
-    getSupabase()
+    const supabase = getSupabase();
+    supabase
       .from("elder_profile")
       .select("id,name,relationship,priority_status")
       .order("created_at", { ascending: true })
@@ -34,11 +36,19 @@ export default function GList() {
         else setElders((data ?? []) as ElderRow[]);
         setLoading(false);
       });
+    supabase.rpc("is_admin").then(({ data }) => setIsAdmin(Boolean(data)));
   }, []);
 
   return (
     <AppShell>
-      <div className="g-header">Callog(콜록)</div>
+      <div className="g-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span>Callog(콜록)</span>
+        {isAdmin && (
+          <button className="g-back" onClick={() => navigate("/admin")}>
+            관리자 대시보드
+          </button>
+        )}
+      </div>
       <h1 className="g-title">대상자 목록</h1>
 
       {loading && <p>불러오는 중...</p>}

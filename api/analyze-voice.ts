@@ -1,5 +1,22 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { assessRisk } from "../lib/riskScoring";
+
+async function assessRiskForVoice(admin: SupabaseClient, voiceResponseId: string): Promise<void> {
+  const { data: voice } = await admin
+    .from("voice_response")
+    .select("daily_checkin_id")
+    .eq("id", voiceResponseId)
+    .maybeSingle();
+  if (!voice?.daily_checkin_id) return;
+  const { data: checkin } = await admin
+    .from("daily_checkin")
+    .select("elder_profile_id,date")
+    .eq("id", voice.daily_checkin_id)
+    .maybeSingle();
+  if (!checkin) return;
+  await assessRisk(admin, checkin.elder_profile_id, checkin.date);
+}
 
 // 음성 분석 — 실패해도 하루 기록은 이미 저장되어 있으므로 안전하게 무시된다 (fire-and-forget).
 // 근거: docs/기능설계서.md §2.2, plan §"Gemini 연동 범위"
@@ -83,9 +100,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
       .eq("id", voiceResponseId);
 
+    await assessRiskForVoice(admin, voiceResponseId);
     res.status(200).json({ status: "ok" });
   } catch (err) {
     await admin.from("voice_response").update({ analysis_status: "failed" }).eq("id", voiceResponseId);
+    await assessRiskForVoice(admin, voiceResponseId);
     res.status(200).json({ status: "failed", error: err instanceof Error ? err.message : String(err) });
   }
 }

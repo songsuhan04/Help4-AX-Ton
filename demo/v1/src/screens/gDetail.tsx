@@ -20,6 +20,7 @@ interface ElderDetail {
 interface RiskRow {
   reason: string;
   level: RiskLevel;
+  date: string;
 }
 
 interface LetterRow {
@@ -53,7 +54,7 @@ export default function GDetail() {
       });
     supabase
       .from("risk_assessment")
-      .select("reason,level")
+      .select("reason,level,date")
       .eq("elder_profile_id", elderId)
       .order("date", { ascending: false })
       .limit(1)
@@ -76,13 +77,14 @@ export default function GDetail() {
   }, [elderId]);
 
   async function markChecked() {
+    if (!risk) return;
     setBusy(true);
+    // order()/limit()은 update에는 적용되지 않아 date로 직접 특정 행만 지정해야 한다
     await getSupabase()
       .from("risk_assessment")
       .update({ family_action: "확인함" })
       .eq("elder_profile_id", elderId)
-      .order("date", { ascending: false })
-      .limit(1);
+      .eq("date", risk.date);
     setBusy(false);
   }
 
@@ -119,7 +121,7 @@ export default function GDetail() {
             전화하기
           </button>
         )}
-        <button className="g-button g-button--secondary" disabled={busy} onClick={markChecked} style={{ flex: 1 }}>
+        <button className="g-button g-button--secondary" disabled={busy || !risk} onClick={markChecked} style={{ flex: 1 }}>
           확인했어요
         </button>
       </div>

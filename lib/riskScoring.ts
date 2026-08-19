@@ -16,7 +16,7 @@ const SEVERITY_POINTS: Record<Severity, number> = { ok: 0, warn: 1, danger: 2 };
 const LEVEL_THRESHOLD = { 심각: 3, 위험: 1 } as const;
 
 export async function assessRisk(admin: SupabaseClient, elderProfileId: string, date: string): Promise<void> {
-  const [{ data: conditions }, { data: checkin }] = await Promise.all([
+  const [{ data: conditions, error: condErr }, { data: checkin, error: checkinErr }] = await Promise.all([
     admin.from("elder_condition").select("condition_type").eq("elder_profile_id", elderProfileId),
     admin
       .from("daily_checkin")
@@ -25,6 +25,8 @@ export async function assessRisk(admin: SupabaseClient, elderProfileId: string, 
       .eq("date", date)
       .maybeSingle(),
   ]);
+  if (condErr) console.error("assessRisk: elder_condition query failed", condErr);
+  if (checkinErr) console.error("assessRisk: daily_checkin query failed", checkinErr);
 
   // 오늘 체크인이 아직 없으면(예: 음성만 먼저 저장되는 경우는 없지만 방어적으로) 계산하지 않는다.
   if (!checkin) return;
@@ -58,11 +60,12 @@ export async function assessRisk(admin: SupabaseClient, elderProfileId: string, 
     score += points;
   }
 
-  const { data: voice } = await admin
+  const { data: voice, error: voiceErr } = await admin
     .from("voice_response")
     .select("analysis_status")
     .eq("daily_checkin_id", checkin.id)
     .maybeSingle();
+  if (voiceErr) console.error("assessRisk: voice_response query failed", voiceErr);
 
   if (voice?.analysis_status === "failed") {
     score += 1;
@@ -72,7 +75,7 @@ export async function assessRisk(admin: SupabaseClient, elderProfileId: string, 
   const level = score >= LEVEL_THRESHOLD.심각 ? "심각" : score >= LEVEL_THRESHOLD.위험 ? "위험" : "안전";
   const reason = reasons.length ? reasons.join(" / ") : "특별한 위험 신호가 없습니다";
 
-  await admin.from("risk_assessment").upsert(
+  const { error: upsertErr } = await admin.from("risk_assessment").upsert(
     {
       elder_profile_id: elderProfileId,
       date,
@@ -82,6 +85,11 @@ export async function assessRisk(admin: SupabaseClient, elderProfileId: string, 
     },
     { onConflict: "elder_profile_id,date" }
   );
+  if (upsertErr) console.error("assessRisk: risk_assessment upsert failed", upsertErr);
 
-  await admin.from("elder_profile").update({ priority_status: level }).eq("id", elderProfileId);
+  const { error: updateErr } = await admin
+    .from("elder_profile")
+    .update({ priority_status: level })
+    .eq("id", elderProfileId);
+  if (updateErr) console.error("assessRisk: elder_profile update failed", updateErr);
 }

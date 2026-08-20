@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { SpeakButton } from "../components/SpeakButton";
 import { createTestBlob, startRecording, type RecordingHandle } from "../lib/recorder";
-import { uploadToBucket } from "../lib/storage";
+import { uploadToBucket, deleteFromBucket } from "../lib/storage";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 
@@ -55,22 +55,42 @@ export default function ESpeech() {
         .eq("elder_profile_id", elderId)
         .eq("date", new Date().toISOString().slice(0, 10))
         .single();
-      const { data: voiceRow } = await supabase
-        .from("voice_response")
-        .insert({
-          daily_checkin_id: checkin?.id,
-          audio_url: path,
-          response_latency_ms: Date.now() - startedAt,
-        })
-        .select("id")
-        .single();
-      // 분석 요청은 fire-and-forget — 실패해도 하루 기록은 그대로 인정된다
-      if (voiceRow?.id) {
-        fetch("/api/analyze-voice", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ voiceResponseId: voiceRow.id }),
-        }).catch(() => {});
+      if (checkin?.id) {
+        // daily_checkin_id는 unique 제약이라 하루에 여러 번 녹음하면 insert가 아니라
+        // 기존 행을 덮어써야 한다 — 예전엔 insert만 해서 두 번째 시도부터는 조용히
+        // 실패하고 항상 첫 녹음만 남아있었다. 근거: 실사용 피드백 — "덮어쓰기가 안 된다"
+        const { data: existing } = await supabase
+          .from("voice_response")
+          .select("audio_url")
+          .eq("daily_checkin_id", checkin.id)
+          .maybeSingle();
+        const { data: voiceRow } = await supabase
+          .from("voice_response")
+          .upsert(
+            {
+              daily_checkin_id: checkin.id,
+              audio_url: path,
+              response_latency_ms: Date.now() - startedAt,
+              analysis_status: "pending",
+              transcript: null,
+              observations: null,
+              speech_rate: null,
+              silence_ratio: null,
+              analysis_json: null,
+            },
+            { onConflict: "daily_checkin_id" }
+          )
+          .select("id")
+          .single();
+        if (existing?.audio_url) await deleteFromBucket("voice", existing.audio_url).catch(() => {});
+        // 분석 요청은 fire-and-forget — 실패해도 하루 기록은 그대로 인정된다
+        if (voiceRow?.id) {
+          fetch("/api/analyze-voice", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ voiceResponseId: voiceRow.id }),
+          }).catch(() => {});
+        }
       }
     }
     navigate("/elder/done");

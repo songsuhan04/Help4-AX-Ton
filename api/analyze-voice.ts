@@ -63,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const audioBuffer = Buffer.from(await audioResp.arrayBuffer());
 
     const geminiResp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -80,7 +80,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     );
     const geminiJson = await geminiResp.json();
-    console.log("gemini debug", JSON.stringify({ status: geminiResp.status, audioBytes: audioBuffer.length, geminiJson }));
+    if (!geminiResp.ok || geminiJson?.error) {
+      throw new Error(geminiJson?.error?.message ?? `gemini request failed (${geminiResp.status})`);
+    }
     const text = geminiJson?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
     let parsed: { transcript?: string; speech_rate_wpm?: number; silence_ratio?: number } = {};

@@ -78,6 +78,9 @@ export default function EDone() {
       <button className="e-primary" onClick={() => navigate("/elder/record")}>
         영상편지 남기기
       </button>
+      <button className="e-secondary" onClick={() => navigate("/elder/check")}>
+        처음 화면으로
+      </button>
     </AppShell>
   );
 }

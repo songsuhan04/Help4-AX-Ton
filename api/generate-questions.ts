@@ -22,111 +22,269 @@ interface GeneratedQuestion {
 const CATEGORIES: Category[] = ["medication", "meal", "outing", "mood", "condition", "other"];
 const SEVERITIES: Severity[] = ["ok", "warn", "danger"];
 
-const COMMON_FALLBACK: GeneratedQuestion[] = [
-  {
-    question: "약 드셨어요?",
-    category: "medication",
-    options: [
-      { text: "네, 먹었어요", severity: "ok" },
-      { text: "아직이에요", severity: "warn" },
-    ],
-  },
-  {
-    question: "식사하셨어요?",
-    category: "meal",
-    options: [
-      { text: "네, 먹었어요", severity: "ok" },
-      { text: "아직이에요", severity: "warn" },
-    ],
-  },
-  {
-    question: "오늘 밖에 나가셨어요?",
-    category: "outing",
-    options: [
-      { text: "네, 나갔어요", severity: "ok" },
-      { text: "아직 안 나갔어요", severity: "warn" },
-    ],
-  },
-];
-
-const CONDITION_FALLBACK: Record<string, GeneratedQuestion> = {
-  htn: {
-    question: "머리 아프거나 어지럽지 않으세요?",
-    category: "condition",
-    options: [
-      { text: "괜찮아요", severity: "ok" },
-      { text: "조금 그래요", severity: "warn" },
-      { text: "많이 그래요", severity: "danger" },
-    ],
-  },
-  diabetes: {
-    question: "손발이 저리지 않으세요?",
-    category: "condition",
-    options: [
-      { text: "괜찮아요", severity: "ok" },
-      { text: "조금 그래요", severity: "warn" },
-      { text: "많이 그래요", severity: "danger" },
-    ],
-  },
-  heart: {
-    question: "가슴이 답답하거나 두근거리지 않으세요?",
-    category: "condition",
-    options: [
-      { text: "괜찮아요", severity: "ok" },
-      { text: "조금 그래요", severity: "warn" },
-      { text: "많이 그래요", severity: "danger" },
-    ],
-  },
-  stroke: {
-    question: "손발에 힘이 빠지는 느낌 없으세요?",
-    category: "condition",
-    options: [
-      { text: "없어요", severity: "ok" },
-      { text: "조금 있어요", severity: "warn" },
-      { text: "많이 있어요", severity: "danger" },
-    ],
-  },
-  parkinsons: {
-    question: "몸이 떨리거나 움직임이 둔하지 않으세요?",
-    category: "condition",
-    options: [
-      { text: "괜찮아요", severity: "ok" },
-      { text: "조금 그래요", severity: "warn" },
-      { text: "많이 그래요", severity: "danger" },
-    ],
-  },
-  depression: {
-    question: "오늘 기분은 어떠세요?",
-    category: "mood",
-    options: [
-      { text: "좋아요", severity: "ok" },
-      { text: "보통이에요", severity: "warn" },
-      { text: "안 좋아요", severity: "danger" },
-    ],
-  },
-  arthritis: {
-    question: "무릎이 많이 아프지 않으세요?",
-    category: "condition",
-    options: [
-      { text: "괜찮아요", severity: "ok" },
-      { text: "조금 아파요", severity: "warn" },
-      { text: "많이 아파요", severity: "danger" },
-    ],
-  },
-  copd: {
-    question: "숨쉬기 힘들거나 기침이 심하지 않으세요?",
-    category: "condition",
-    options: [
-      { text: "괜찮아요", severity: "ok" },
-      { text: "조금 그래요", severity: "warn" },
-      { text: "많이 그래요", severity: "danger" },
-    ],
-  },
+// 각 항목마다 여러 표현을 준비해두고 매일 다른 문항이 나오도록 로테이션한다.
+// 근거: 팀원 피드백 — "고정 문항이 매일 똑같이 나온다, 질문을 늘리고 자동 로테이션 되면 좋겠다"
+const COMMON_FALLBACK_VARIANTS: Record<"medication" | "meal" | "outing", GeneratedQuestion[]> = {
+  medication: [
+    {
+      question: "약 드셨어요?",
+      category: "medication",
+      options: [
+        { text: "네, 먹었어요", severity: "ok" },
+        { text: "아직이에요", severity: "warn" },
+      ],
+    },
+    {
+      question: "오늘 약은 챙겨 드셨어요?",
+      category: "medication",
+      options: [
+        { text: "네, 챙겼어요", severity: "ok" },
+        { text: "깜빡했어요", severity: "warn" },
+      ],
+    },
+    {
+      question: "아침 약 드시는 거 잊지 않으셨어요?",
+      category: "medication",
+      options: [
+        { text: "네, 잘 먹었어요", severity: "ok" },
+        { text: "아직 안 먹었어요", severity: "warn" },
+      ],
+    },
+  ],
+  meal: [
+    {
+      question: "식사하셨어요?",
+      category: "meal",
+      options: [
+        { text: "네, 먹었어요", severity: "ok" },
+        { text: "아직이에요", severity: "warn" },
+      ],
+    },
+    {
+      question: "오늘 끼니는 잘 챙기셨어요?",
+      category: "meal",
+      options: [
+        { text: "네, 챙겼어요", severity: "ok" },
+        { text: "거의 못 먹었어요", severity: "warn" },
+      ],
+    },
+    {
+      question: "밥은 맛있게 드셨어요?",
+      category: "meal",
+      options: [
+        { text: "네, 잘 먹었어요", severity: "ok" },
+        { text: "입맛이 없었어요", severity: "warn" },
+      ],
+    },
+  ],
+  outing: [
+    {
+      question: "오늘 밖에 나가셨어요?",
+      category: "outing",
+      options: [
+        { text: "네, 나갔어요", severity: "ok" },
+        { text: "아직 안 나갔어요", severity: "warn" },
+      ],
+    },
+    {
+      question: "오늘 바깥바람 좀 쐬셨어요?",
+      category: "outing",
+      options: [
+        { text: "네, 쐬었어요", severity: "ok" },
+        { text: "집에만 있었어요", severity: "warn" },
+      ],
+    },
+    {
+      question: "잠깐이라도 산책하셨어요?",
+      category: "outing",
+      options: [
+        { text: "네, 했어요", severity: "ok" },
+        { text: "안 했어요", severity: "warn" },
+      ],
+    },
+  ],
 };
 
-function fallbackQuestions(conditions: string[]): GeneratedQuestion[] {
-  const extra = conditions.map((c) => CONDITION_FALLBACK[c]).filter(Boolean) as GeneratedQuestion[];
-  return [...COMMON_FALLBACK, ...extra];
+const CONDITION_FALLBACK_VARIANTS: Record<string, GeneratedQuestion[]> = {
+  htn: [
+    {
+      question: "머리 아프거나 어지럽지 않으세요?",
+      category: "condition",
+      options: [
+        { text: "괜찮아요", severity: "ok" },
+        { text: "조금 그래요", severity: "warn" },
+        { text: "많이 그래요", severity: "danger" },
+      ],
+    },
+    {
+      question: "오늘 혈압 때문에 힘든 건 없으셨어요?",
+      category: "condition",
+      options: [
+        { text: "괜찮아요", severity: "ok" },
+        { text: "조금 어지러웠어요", severity: "warn" },
+        { text: "많이 힘들었어요", severity: "danger" },
+      ],
+    },
+  ],
+  diabetes: [
+    {
+      question: "손발이 저리지 않으세요?",
+      category: "condition",
+      options: [
+        { text: "괜찮아요", severity: "ok" },
+        { text: "조금 그래요", severity: "warn" },
+        { text: "많이 그래요", severity: "danger" },
+      ],
+    },
+    {
+      question: "오늘 어지럽거나 기운 없지 않으셨어요?",
+      category: "condition",
+      options: [
+        { text: "괜찮아요", severity: "ok" },
+        { text: "조금 그랬어요", severity: "warn" },
+        { text: "많이 그랬어요", severity: "danger" },
+      ],
+    },
+  ],
+  heart: [
+    {
+      question: "가슴이 답답하거나 두근거리지 않으세요?",
+      category: "condition",
+      options: [
+        { text: "괜찮아요", severity: "ok" },
+        { text: "조금 그래요", severity: "warn" },
+        { text: "많이 그래요", severity: "danger" },
+      ],
+    },
+    {
+      question: "오늘 숨이 차거나 가슴이 불편하지 않으셨어요?",
+      category: "condition",
+      options: [
+        { text: "괜찮아요", severity: "ok" },
+        { text: "조금 그랬어요", severity: "warn" },
+        { text: "많이 그랬어요", severity: "danger" },
+      ],
+    },
+  ],
+  stroke: [
+    {
+      question: "손발에 힘이 빠지는 느낌 없으세요?",
+      category: "condition",
+      options: [
+        { text: "없어요", severity: "ok" },
+        { text: "조금 있어요", severity: "warn" },
+        { text: "많이 있어요", severity: "danger" },
+      ],
+    },
+    {
+      question: "말이 어눌해지거나 한쪽이 저리지 않으셨어요?",
+      category: "condition",
+      options: [
+        { text: "없어요", severity: "ok" },
+        { text: "조금 있어요", severity: "warn" },
+        { text: "많이 있어요", severity: "danger" },
+      ],
+    },
+  ],
+  parkinsons: [
+    {
+      question: "몸이 떨리거나 움직임이 둔하지 않으세요?",
+      category: "condition",
+      options: [
+        { text: "괜찮아요", severity: "ok" },
+        { text: "조금 그래요", severity: "warn" },
+        { text: "많이 그래요", severity: "danger" },
+      ],
+    },
+    {
+      question: "오늘 걷거나 움직이는 게 힘들지 않으셨어요?",
+      category: "condition",
+      options: [
+        { text: "괜찮아요", severity: "ok" },
+        { text: "조금 힘들었어요", severity: "warn" },
+        { text: "많이 힘들었어요", severity: "danger" },
+      ],
+    },
+  ],
+  depression: [
+    {
+      question: "오늘 기분은 어떠세요?",
+      category: "mood",
+      options: [
+        { text: "좋아요", severity: "ok" },
+        { text: "보통이에요", severity: "warn" },
+        { text: "안 좋아요", severity: "danger" },
+      ],
+    },
+    {
+      question: "오늘 마음은 편안하셨어요?",
+      category: "mood",
+      options: [
+        { text: "네, 편안했어요", severity: "ok" },
+        { text: "그저 그랬어요", severity: "warn" },
+        { text: "마음이 힘들었어요", severity: "danger" },
+      ],
+    },
+  ],
+  arthritis: [
+    {
+      question: "무릎이 많이 아프지 않으세요?",
+      category: "condition",
+      options: [
+        { text: "괜찮아요", severity: "ok" },
+        { text: "조금 아파요", severity: "warn" },
+        { text: "많이 아파요", severity: "danger" },
+      ],
+    },
+    {
+      question: "오늘 관절 때문에 움직이기 불편하지 않으셨어요?",
+      category: "condition",
+      options: [
+        { text: "괜찮아요", severity: "ok" },
+        { text: "조금 불편했어요", severity: "warn" },
+        { text: "많이 불편했어요", severity: "danger" },
+      ],
+    },
+  ],
+  copd: [
+    {
+      question: "숨쉬기 힘들거나 기침이 심하지 않으세요?",
+      category: "condition",
+      options: [
+        { text: "괜찮아요", severity: "ok" },
+        { text: "조금 그래요", severity: "warn" },
+        { text: "많이 그래요", severity: "danger" },
+      ],
+    },
+    {
+      question: "오늘 숨이 차서 힘들지 않으셨어요?",
+      category: "condition",
+      options: [
+        { text: "괜찮아요", severity: "ok" },
+        { text: "조금 그랬어요", severity: "warn" },
+        { text: "많이 그랬어요", severity: "danger" },
+      ],
+    },
+  ],
+};
+
+// 최근 사용한 질문은 피하고, 그래도 겹치면 날짜 기준으로 다른 표현이 나오도록 순환시킨다.
+function pickVariant(variants: GeneratedQuestion[], recentQuestions: string[]): GeneratedQuestion {
+  const fresh = variants.filter((v) => !recentQuestions.includes(v.question));
+  const pool = fresh.length > 0 ? fresh : variants;
+  const dayIndex = Math.floor(Date.now() / 86400000);
+  return pool[dayIndex % pool.length];
+}
+
+function fallbackQuestions(conditions: string[], recentQuestions: string[]): GeneratedQuestion[] {
+  const common = (["medication", "meal", "outing"] as const).map((cat) =>
+    pickVariant(COMMON_FALLBACK_VARIANTS[cat], recentQuestions)
+  );
+  const extra = conditions
+    .map((c) => CONDITION_FALLBACK_VARIANTS[c])
+    .filter((variants): variants is GeneratedQuestion[] => Boolean(variants))
+    .map((variants) => pickVariant(variants, recentQuestions));
+  return [...common, ...extra];
 }
 
 function buildPrompt(conditions: string[], recentQuestions: string[]): string {
@@ -184,7 +342,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const geminiKey = process.env.GEMINI_API_KEY;
   if (!geminiKey) {
-    res.status(200).json({ questions: fallbackQuestions(conditions), source: "fallback" });
+    res.status(200).json({ questions: fallbackQuestions(conditions, recentQuestions), source: "fallback" });
     return;
   }
 
@@ -206,6 +364,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (questions.length === 0) throw new Error("empty generation result");
     res.status(200).json({ questions, source: "gemini" });
   } catch {
-    res.status(200).json({ questions: fallbackQuestions(conditions), source: "fallback" });
+    res.status(200).json({ questions: fallbackQuestions(conditions, recentQuestions), source: "fallback" });
   }
 }

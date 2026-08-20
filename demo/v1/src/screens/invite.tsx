@@ -4,6 +4,7 @@ import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getRpcErrorMessage } from "../lib/errors";
+import { formatPhone } from "../lib/phone";
 
 export const SCREEN_ID = "invite";
 
@@ -57,7 +58,7 @@ export default function Invite() {
 
           <div className="g-field" style={{ marginTop: 16 }}>
             <label>어르신 전화번호 (문자로 보내기)</label>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="010-0000-0000" />
+            <input value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="010-0000-0000" maxLength={13} />
           </div>
           <a className="g-button" style={{ display: "block", textAlign: "center", textDecoration: "none" }} href={smsHref}>
             문자로 보내기

@@ -106,7 +106,7 @@ export default function ERecord() {
           </button>
         )}
         <button className="e-secondary" onClick={() => navigate("/elder/done")}>
-          완료 화면으로
+          오늘은 건너뛰기
         </button>
       </AppShell>
     );
@@ -146,8 +146,8 @@ export default function ERecord() {
         <video src={previewUrl.current} controls style={{ width: "100%", borderRadius: 12, background: "#000", aspectRatio: "4/3", marginBottom: 16 }} />
       )}
 
-      <button className="e-primary" onClick={() => navigate("/elder/done")}>
-        완료 화면으로
+      <button className="e-primary" onClick={() => navigate("/elder/check")}>
+        처음 화면으로
       </button>
     </AppShell>
   );

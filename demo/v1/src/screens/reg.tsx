@@ -4,6 +4,7 @@ import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getErrorMessage } from "../lib/errors";
+import { formatPhone } from "../lib/phone";
 
 export const SCREEN_ID = "reg";
 
@@ -72,7 +73,13 @@ export default function Reg() {
         </div>
         <div className="g-field">
           <label>어르신 전화번호 (전화하기 버튼에 사용)</label>
-          <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="010-0000-0000" />
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(formatPhone(e.target.value))}
+            placeholder="010-0000-0000"
+            maxLength={13}
+          />
         </div>
         <div className="g-field">
           <label>안부 묻는 시각</label>

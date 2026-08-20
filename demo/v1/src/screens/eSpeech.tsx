@@ -72,6 +72,13 @@ export default function ESpeech() {
 
   return (
     <AppShell variant="elder">
+      <button
+        className="e-secondary"
+        onClick={() => navigate(-1)}
+        style={{ marginBottom: 12, width: "auto", padding: "8px 16px" }}
+      >
+        ← 이전 화면
+      </button>
       <div className="e-topbar">
         <span>마지막</span>
         <SpeakButton text={QUESTION} />

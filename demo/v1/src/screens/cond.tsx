@@ -17,6 +17,7 @@ export default function Cond() {
 
   const [selected, setSelected] = useState<string[]>([]);
   const [customText, setCustomText] = useState("");
+  const [consentHealth, setConsentHealth] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -83,8 +84,28 @@ export default function Cond() {
         )}
       </div>
 
+      {/* 개인정보보호법 §23 대응 — 건강정보(지병)는 민감정보라 일반 개인정보 동의와 별도로
+          받아야 하고, 보호자가 어르신을 대신해 입력하므로 대리 동의 확인 문구도 필요하다.
+          근거: Help4/법적문제 피해가기 공략.pdf §1, 체크리스트 1번 */}
+      <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "var(--ink2)", marginBottom: 16 }}>
+        <input
+          type="checkbox"
+          checked={consentHealth}
+          onChange={(e) => setConsentHealth(e.target.checked)}
+          required
+          style={{ marginTop: 2 }}
+        />
+        <span>
+          [필수] 건강 관련 민감정보(지병) 수집·이용에 동의합니다
+          <br />
+          <span style={{ fontSize: 12, color: "var(--ink3)" }}>
+            어르신(정보주체)의 사전 동의를 받아 보호자가 대신 입력하는 것에 동의합니다.
+          </span>
+        </span>
+      </label>
+
       {error && <p style={{ color: "var(--red)", fontSize: 13 }}>{error}</p>}
-      <button className="g-button" onClick={handleSubmit} disabled={loading || !supabaseConfigured}>
+      <button className="g-button" onClick={handleSubmit} disabled={loading || !consentHealth || !supabaseConfigured}>
         {loading ? "저장 중..." : "저장하고 초대하기"}
       </button>
     </AppShell>

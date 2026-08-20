@@ -17,6 +17,7 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [consent, setConsent] = useState(false);
+  const [consentOverseas, setConsentOverseas] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -75,12 +76,24 @@ export default function Signup() {
             disabled={!supabaseConfigured}
           />
         </div>
-        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--ink2)", marginBottom: 16 }}>
-          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required />
-          개인정보 수집·이용에 동의합니다
+        {/* 개인정보보호법 §23·§28-8 대응 — 일반 개인정보 동의와 국외이전(Google Gemini) 동의를
+            분리된 체크박스로 구성. 근거: Help4/법적문제 피해가기 공략.pdf §1, §3, 체크리스트 1번 */}
+        <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "var(--ink2)", marginBottom: 10 }}>
+          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required style={{ marginTop: 2 }} />
+          <span>[필수] 개인정보 수집·이용에 동의합니다</span>
+        </label>
+        <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "var(--ink2)", marginBottom: 16 }}>
+          <input type="checkbox" checked={consentOverseas} onChange={(e) => setConsentOverseas(e.target.checked)} required style={{ marginTop: 2 }} />
+          <span>
+            [필수] 개인정보 국외 이전에 동의합니다
+            <br />
+            <span style={{ fontSize: 12, color: "var(--ink3)" }}>
+              수령자: Google LLC (Gemini API) · 이전 항목: 음성·안부 체크리스트 데이터 · 목적: AI 기반 안부 분석
+            </span>
+          </span>
         </label>
         {error && <p style={{ color: "var(--red)", fontSize: 13 }}>{error}</p>}
-        <button className="g-button" type="submit" disabled={loading || !consent || !supabaseConfigured}>
+        <button className="g-button" type="submit" disabled={loading || !consent || !consentOverseas || !supabaseConfigured}>
           {loading ? "가입 중..." : "다음 — 어르신 정보"}
         </button>
       </form>

@@ -4,6 +4,7 @@ import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
 import { RiskDot } from "../components/RiskDot";
 import { TrendChart, type TrendPoint } from "../components/TrendChart";
+import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getSignedUrl, deleteFromBucket } from "../lib/storage";
 import { getRpcErrorMessage } from "../lib/errors";
@@ -295,6 +296,8 @@ export default function GDetail() {
           </div>
         ))}
       </div>
+
+      <MedicalDisclaimer />
     </AppShell>
   );
 }

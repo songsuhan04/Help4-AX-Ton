@@ -76,6 +76,9 @@ export default function Signup() {
             disabled={!supabaseConfigured}
           />
         </div>
+        <a href="/terms" target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "var(--dawn)", display: "inline-block", marginBottom: 10 }}>
+          이용약관 및 개인정보 처리 안내 보기
+        </a>
         {/* 개인정보보호법 §23·§28-8 대응 — 일반 개인정보 동의와 국외이전(Google Gemini) 동의를
             분리된 체크박스로 구성. 근거: Help4/법적문제 피해가기 공략.pdf §1, §3, 체크리스트 1번 */}
         <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "var(--ink2)", marginBottom: 10 }}>

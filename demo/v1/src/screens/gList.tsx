@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { RiskDot } from "../components/RiskDot";
+import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import type { RiskLevel } from "../config/riskConstants";
 
@@ -111,6 +112,8 @@ export default function GList() {
       <button className="g-button" style={{ marginTop: 20 }} onClick={() => navigate("/guardian/elders/new")}>
         어르신 추가
       </button>
+
+      <MedicalDisclaimer />
     </AppShell>
   );
 }

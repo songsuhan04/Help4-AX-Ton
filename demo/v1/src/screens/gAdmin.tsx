@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
 import { RiskDot } from "../components/RiskDot";
+import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getErrorMessage } from "../lib/errors";
 import type { RiskLevel } from "../config/riskConstants";
@@ -125,6 +126,8 @@ export default function GAdmin() {
           </button>
         );
       })}
+
+      <MedicalDisclaimer />
     </AppShell>
   );
 }

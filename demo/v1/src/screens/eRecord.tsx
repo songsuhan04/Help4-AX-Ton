@@ -7,6 +7,7 @@ import { uploadToBucket } from "../lib/storage";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { fs } from "../lib/fontScale";
+import { RecordingNotice } from "../components/RecordingNotice";
 
 export const SCREEN_ID = "eRecord";
 
@@ -86,6 +87,7 @@ export default function ERecord() {
           <SpeakButton text="하고 싶은 말씀을 하세요" />
         </div>
         <h1 className="e-question" style={{ fontSize: fs(24) }}>하고 싶은 말씀을 하세요</h1>
+        <RecordingNotice />
 
         <video ref={liveRef} autoPlay muted style={{ width: "100%", borderRadius: 12, background: "rgba(0,0,0,0.3)", aspectRatio: "4/3", marginBottom: 16 }} />
 

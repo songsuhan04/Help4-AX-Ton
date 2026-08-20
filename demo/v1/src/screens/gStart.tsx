@@ -75,6 +75,10 @@ export default function GStart() {
           </button>
         </form>
       )}
+
+      <a href="/terms" target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "var(--ink3)", display: "block", marginTop: 24, textAlign: "center" }}>
+        이용약관 및 개인정보 처리 안내
+      </a>
     </AppShell>
   );
 }

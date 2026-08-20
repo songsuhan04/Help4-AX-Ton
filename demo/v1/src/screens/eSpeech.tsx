@@ -6,6 +6,7 @@ import { createTestBlob, startRecording, type RecordingHandle } from "../lib/rec
 import { uploadToBucket, deleteFromBucket } from "../lib/storage";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
+import { RecordingNotice } from "../components/RecordingNotice";
 
 export const SCREEN_ID = "eSpeech";
 
@@ -119,6 +120,7 @@ export default function ESpeech() {
       </div>
       <h1 className="e-question">{topic}</h1>
       <p style={{ color: "rgba(255,255,255,0.7)" }}>천천히 말씀하시면 됩니다</p>
+      <RecordingNotice />
 
       {!recording && (
         <button className="e-primary" onClick={start} disabled={busy}>

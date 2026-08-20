@@ -368,7 +368,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const questions = normalize(JSON.parse(unfenced));
     if (questions.length === 0) throw new Error("empty generation result");
     res.status(200).json({ questions, source: "gemini" });
-  } catch {
+  } catch (err) {
+    console.error("generate-questions debug", err instanceof Error ? err.message : String(err));
     res.status(200).json({ questions: fallbackQuestions(conditions, recentQuestions), source: "fallback" });
   }
 }

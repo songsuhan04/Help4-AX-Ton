@@ -359,8 +359,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     );
     const geminiJson = await geminiResp.json();
+    if (!geminiResp.ok || geminiJson?.error) {
+      throw new Error(geminiJson?.error?.message ?? `gemini request failed (${geminiResp.status})`);
+    }
     const text = geminiJson?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-    const questions = normalize(JSON.parse(text));
+    // responseMimeType을 지정해도 가끔 ```json ... ``` 코드블록으로 감싸서 응답하는 경우가 있어 방어적으로 벗겨낸다
+    const unfenced = text.replace(/^```(?:json)?\s*([\s\S]*?)\s*```$/, "$1");
+    const questions = normalize(JSON.parse(unfenced));
     if (questions.length === 0) throw new Error("empty generation result");
     res.status(200).json({ questions, source: "gemini" });
   } catch {

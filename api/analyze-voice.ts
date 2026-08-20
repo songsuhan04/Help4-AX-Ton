@@ -76,6 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               ],
             },
           ],
+          generationConfig: { responseMimeType: "application/json" },
         }),
       }
     );
@@ -85,9 +86,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const text = geminiJson?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
+    // responseMimeType을 지정해도 가끔 ```json ... ``` 코드블록으로 감싸서 응답하는 경우가 있어 방어적으로 벗겨낸다
+    const unfenced = text.replace(/^```(?:json)?\s*([\s\S]*?)\s*```$/, "$1");
+
     let parsed: { transcript?: string; speech_rate_wpm?: number; silence_ratio?: number } = {};
     try {
-      parsed = JSON.parse(text);
+      parsed = JSON.parse(unfenced);
     } catch {
       // Gemini가 JSON이 아닌 자유 텍스트로 답할 수 있음 — 원문은 analysis_json에 그대로 보존
     }

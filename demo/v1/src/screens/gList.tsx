@@ -64,6 +64,16 @@ export default function GList() {
             <div className="g-list-name">{elder.name}</div>
             <div className="g-list-meta">{elder.relationship}</div>
           </div>
+          <span
+            role="button"
+            style={{ color: "var(--ink3)", fontSize: 13, padding: "4px 8px" }}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/guardian/elders/${elder.id}/edit`);
+            }}
+          >
+            수정
+          </span>
           <span style={{ color: "var(--ink3)" }}>›</span>
         </button>
       ))}

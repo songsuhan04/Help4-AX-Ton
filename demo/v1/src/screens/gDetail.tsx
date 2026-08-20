@@ -36,6 +36,9 @@ interface VoiceRow {
   id: string;
   audio_url: string;
   created_at: string;
+  transcript: string | null;
+  observations: string | null;
+  analysis_status: string;
   signedUrl?: string;
 }
 
@@ -112,7 +115,7 @@ export default function GDetail() {
         if (ids.length === 0) return;
         const { data } = await supabase
           .from("voice_response")
-          .select("id,audio_url,created_at")
+          .select("id,audio_url,created_at,transcript,observations,analysis_status")
           .in("daily_checkin_id", ids)
           .order("created_at", { ascending: false })
           .limit(1)
@@ -146,11 +149,12 @@ export default function GDetail() {
     navigate(`/guardian/elders/${elderId}/invite`);
   }
 
-  async function deleteMyLetter(letter: LetterRow) {
+  async function deleteLetter(letter: LetterRow, from: "elder" | "family") {
     if (!window.confirm("이 영상편지를 삭제할까요? 되돌릴 수 없습니다.")) return;
     await deleteFromBucket("letters", letter.video_url).catch(() => {});
     await getSupabase().from("video_letter").delete().eq("id", letter.id);
-    setMyLetters((prev) => prev.filter((l) => l.id !== letter.id));
+    const setter = from === "elder" ? setLetters : setMyLetters;
+    setter((prev) => prev.filter((l) => l.id !== letter.id));
   }
 
   if (!elder) return <AppShell>{error ? <p style={{ color: "var(--red)" }}>{error}</p> : <p>불러오는 중...</p>}</AppShell>;
@@ -199,6 +203,23 @@ export default function GDetail() {
             {new Date(voice.created_at).toLocaleString("ko-KR")}
           </div>
           <audio src={voice.signedUrl} controls style={{ width: "100%" }} />
+          {voice.analysis_status === "failed" && (
+            <p style={{ color: "var(--red)", fontSize: 13, marginTop: 8 }}>음성 분석에 실패했습니다. 직접 들어보고 확인해주세요.</p>
+          )}
+          {voice.analysis_status === "ok" && (voice.transcript || voice.observations) && (
+            <div style={{ background: "var(--mist)", borderRadius: 12, padding: 12, marginTop: 8, fontSize: 14 }}>
+              {voice.transcript && (
+                <div style={{ marginBottom: voice.observations ? 6 : 0 }}>
+                  <span style={{ color: "var(--ink3)" }}>말씀 내용: </span>{voice.transcript}
+                </div>
+              )}
+              {voice.observations && (
+                <div>
+                  <span style={{ color: "var(--ink3)" }}>AI 소견: </span>{voice.observations}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -211,7 +232,10 @@ export default function GDetail() {
               {new Date(letter.sent_at).toLocaleString("ko-KR")}
             </div>
             <div style={{ marginBottom: 8 }}>{letter.title}</div>
-            {letter.signedUrl && <video src={letter.signedUrl} controls style={{ width: "100%", borderRadius: 8 }} />}
+            {letter.signedUrl && <video src={letter.signedUrl} controls style={{ width: "100%", borderRadius: 8, marginBottom: 8 }} />}
+            <button className="g-button g-button--secondary" onClick={() => deleteLetter(letter, "elder")}>
+              삭제
+            </button>
           </div>
         ))}
       </div>
@@ -226,7 +250,7 @@ export default function GDetail() {
             </div>
             <div style={{ marginBottom: 8 }}>{letter.title}</div>
             {letter.signedUrl && <video src={letter.signedUrl} controls style={{ width: "100%", borderRadius: 8, marginBottom: 8 }} />}
-            <button className="g-button g-button--secondary" onClick={() => deleteMyLetter(letter)}>
+            <button className="g-button g-button--secondary" onClick={() => deleteLetter(letter, "family")}>
               삭제
             </button>
           </div>

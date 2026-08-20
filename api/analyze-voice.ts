@@ -89,7 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // responseMimeType을 지정해도 가끔 ```json ... ``` 코드블록으로 감싸서 응답하는 경우가 있어 방어적으로 벗겨낸다
     const unfenced = text.replace(/^```(?:json)?\s*([\s\S]*?)\s*```$/, "$1");
 
-    let parsed: { transcript?: string; speech_rate_wpm?: number; silence_ratio?: number } = {};
+    let parsed: { transcript?: string; speech_rate_wpm?: number; silence_ratio?: number; observations?: string } = {};
     try {
       parsed = JSON.parse(unfenced);
     } catch {
@@ -104,6 +104,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         transcript: parsed.transcript ?? null,
         speech_rate: parsed.speech_rate_wpm ?? null,
         silence_ratio: parsed.silence_ratio ?? null,
+        observations: parsed.observations ?? null,
       })
       .eq("id", voiceResponseId);
 

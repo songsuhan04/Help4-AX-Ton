@@ -27,6 +27,7 @@ export function AppRoutes() {
       <Route path="/e/:token" element={<EInvited />} />
 
       <Route path="/guardian/elders/new" element={<GuardianRoute><Reg /></GuardianRoute>} />
+      <Route path="/guardian/elders/:elderId/edit" element={<GuardianRoute><Reg /></GuardianRoute>} />
       <Route path="/guardian/elders/:elderId/conditions" element={<GuardianRoute><Cond /></GuardianRoute>} />
       <Route path="/guardian/elders/:elderId/invite" element={<GuardianRoute><Invite /></GuardianRoute>} />
       <Route path="/guardian" element={<GuardianRoute><GList /></GuardianRoute>} />

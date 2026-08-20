@@ -6,6 +6,7 @@ import { Chip } from "../components/Chip";
 import { CONDITION_CATEGORIES, CONDITIONS, buildDailyQuestions, getConditionsByCategory } from "../domain/conditions";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getErrorMessage } from "../lib/errors";
+import { ConsentItem } from "../components/ConsentItem";
 
 export const SCREEN_ID = "cond";
 
@@ -27,6 +28,9 @@ export default function Cond() {
 
   const preview = buildDailyQuestions(selected);
   const riskNotes = CONDITIONS.filter((c) => selected.includes(c.id) && c.riskNote);
+  // 지병 정보를 실제로 입력할 때만 건강 민감정보 동의를 요구한다(아무 것도 선택하지 않았다면
+  // 건강 데이터 자체가 없으므로 이 동의가 필요 없다).
+  const hasHealthData = selected.length > 0 || customText.trim().length > 0;
 
   async function handleSubmit() {
     setError(null);
@@ -87,25 +91,23 @@ export default function Cond() {
       {/* 개인정보보호법 §23 대응 — 건강정보(지병)는 민감정보라 일반 개인정보 동의와 별도로
           받아야 하고, 보호자가 어르신을 대신해 입력하므로 대리 동의 확인 문구도 필요하다.
           근거: Help4/법적문제 피해가기 공략.pdf §1, 체크리스트 1번 */}
-      <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "var(--ink2)", marginBottom: 16 }}>
-        <input
-          type="checkbox"
-          checked={consentHealth}
-          onChange={(e) => setConsentHealth(e.target.checked)}
-          required
-          style={{ marginTop: 2 }}
-        />
-        <span>
-          [필수] 건강 관련 민감정보(지병) 수집·이용에 동의합니다
-          <br />
-          <span style={{ fontSize: 12, color: "var(--ink3)" }}>
-            어르신(정보주체)의 사전 동의를 받아 보호자가 대신 입력하는 것에 동의합니다.
-          </span>
-        </span>
-      </label>
+      <ConsentItem
+        checked={consentHealth}
+        onChange={setConsentHealth}
+        label={hasHealthData ? "[필수] 건강 관련 민감정보(지병) 수집·이용에 동의합니다" : "건강 관련 민감정보(지병) 수집·이용에 동의합니다"}
+        detail={
+          <>
+            <div>수집 항목: 지병명(사전 정의 목록 또는 직접 입력)</div>
+            <div>수집 목적: 지병에 맞춘 안부 질문 생성, 위험도 산정 시 가중치 반영</div>
+            <div>보유 기간: 어르신 등록 해제 시까지</div>
+            <div>대리 입력: 보호자가 어르신을 대신하여 입력하며, 어르신 본인의 사전 동의를 받았음을 전제로 합니다.</div>
+            <div>동의를 거부할 권리가 있으며, 동의하지 않아도 지병 없이(공통 문항만으로) 서비스를 이용할 수 있습니다.</div>
+          </>
+        }
+      />
 
       {error && <p style={{ color: "var(--red)", fontSize: 13 }}>{error}</p>}
-      <button className="g-button" onClick={handleSubmit} disabled={loading || !consentHealth || !supabaseConfigured}>
+      <button className="g-button" onClick={handleSubmit} disabled={loading || (hasHealthData && !consentHealth) || !supabaseConfigured}>
         {loading ? "저장 중..." : "저장하고 초대하기"}
       </button>
     </AppShell>

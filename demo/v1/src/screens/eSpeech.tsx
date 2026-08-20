@@ -77,6 +77,10 @@ export default function ESpeech() {
               speech_rate: null,
               silence_ratio: null,
               analysis_json: null,
+              // upsert의 ON CONFLICT DO UPDATE는 payload에 없는 컬럼은 건드리지 않는다 —
+              // created_at의 default now()는 최초 insert에만 적용되므로 재녹음 시에도
+              // "최근 말하기 안부" 시각이 갱신되려면 여기서 직접 채워야 한다.
+              created_at: new Date().toISOString(),
             },
             { onConflict: "daily_checkin_id" }
           )

@@ -3,10 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
 import { RiskDot } from "../components/RiskDot";
+import { TrendChart, type TrendPoint } from "../components/TrendChart";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getSignedUrl, deleteFromBucket } from "../lib/storage";
 import { getRpcErrorMessage } from "../lib/errors";
 import type { RiskLevel } from "../config/riskConstants";
+
+const TREND_DAYS = 14;
 
 export const SCREEN_ID = "gDetail";
 
@@ -50,6 +53,7 @@ export default function GDetail() {
   const [letters, setLetters] = useState<LetterRow[]>([]);
   const [myLetters, setMyLetters] = useState<LetterRow[]>([]);
   const [voice, setVoice] = useState<VoiceRow | null>(null);
+  const [trend, setTrend] = useState<TrendPoint[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -124,6 +128,22 @@ export default function GDetail() {
         const signedUrl = await getSignedUrl("voice", data.audio_url).catch(() => undefined);
         setVoice({ ...(data as VoiceRow), signedUrl });
       });
+    // 최근 위험도 추이 — 기능설계서.md §1 "꺾은선 그래프 기록"
+    const days: string[] = [];
+    for (let i = TREND_DAYS - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push(d.toISOString().slice(0, 10));
+    }
+    supabase
+      .from("risk_assessment")
+      .select("date,level")
+      .eq("elder_profile_id", elderId)
+      .gte("date", days[0])
+      .then(({ data }) => {
+        const byDate = new Map((data ?? []).map((r) => [r.date as string, r.level as RiskLevel]));
+        setTrend(days.map((date) => ({ date, level: byDate.get(date) ?? null })));
+      });
   }, [elderId]);
 
   async function markChecked() {
@@ -195,6 +215,13 @@ export default function GDetail() {
         재초대 (기기 변경 시)
       </button>
       {error && <p style={{ color: "var(--red)", fontSize: 13 }}>{error}</p>}
+
+      {trend.some((p) => p.level) && (
+        <div style={{ marginTop: 24 }}>
+          <div className="g-header">최근 {TREND_DAYS}일 추이</div>
+          <TrendChart points={trend} />
+        </div>
+      )}
 
       {voice?.signedUrl && (
         <div style={{ marginTop: 24 }}>

@@ -80,6 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     );
     const geminiJson = await geminiResp.json();
+    console.log("gemini debug", JSON.stringify({ status: geminiResp.status, audioBytes: audioBuffer.length, geminiJson }));
     const text = geminiJson?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
     let parsed: { transcript?: string; speech_rate_wpm?: number; silence_ratio?: number } = {};

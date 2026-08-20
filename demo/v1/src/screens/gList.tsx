@@ -39,6 +39,11 @@ export default function GList() {
     supabase.rpc("is_admin").then(({ data }) => setIsAdmin(Boolean(data)));
   }, []);
 
+  async function logout() {
+    await getSupabase().auth.signOut();
+    navigate("/");
+  }
+
   async function deleteElder(elder: ElderRow) {
     if (!window.confirm(`${elder.name}님을 목록에서 삭제할까요? 관련된 안부 기록·영상편지·위험도 이력이 모두 함께 삭제되며 되돌릴 수 없습니다.`)) return;
     const { error } = await getSupabase().from("elder_profile").delete().eq("id", elder.id);
@@ -53,11 +58,16 @@ export default function GList() {
     <AppShell>
       <div className="g-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span>Callog(콜록)</span>
-        {isAdmin && (
-          <button className="g-back" onClick={() => navigate("/admin")}>
-            관리자 대시보드
+        <div style={{ display: "flex", gap: 8 }}>
+          {isAdmin && (
+            <button className="g-back" onClick={() => navigate("/admin")}>
+              관리자 대시보드
+            </button>
+          )}
+          <button className="g-back" onClick={logout}>
+            로그아웃
           </button>
-        )}
+        </div>
       </div>
       <h1 className="g-title">대상자 목록</h1>
 

@@ -104,7 +104,7 @@ export default function Reg() {
       <form onSubmit={handleSubmit}>
         <div className="g-field">
           <label>성함</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={10} required />
         </div>
         <div className="g-field">
           <label>생년월일</label>

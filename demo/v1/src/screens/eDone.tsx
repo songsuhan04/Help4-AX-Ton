@@ -5,6 +5,7 @@ import { SpeakButton } from "../components/SpeakButton";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSignedUrl } from "../lib/storage";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
+import { computeStreak } from "../lib/streak";
 
 export const SCREEN_ID = "eDone";
 
@@ -24,12 +25,17 @@ export default function EDone() {
     if (!supabaseConfigured) return;
     const elderId = getStoredElderProfileId();
     const supabase = getSupabase();
+    // 예전엔 {count:"exact"}로 전체 기간 누적 체크인 수를 세고 있었다 — 하루라도 건너뛰면
+    // 다시 0부터 시작해야 할 "연속" 참여가 아니라 평생 총 횟수였던 버그. 실제 연속 일수를
+    // 계산하려면 날짜를 받아 오늘(또는 어제)부터 거슬러 올라가며 끊기는 지점을 찾아야 한다.
     supabase
       .from("daily_checkin")
-      .select("date", { count: "exact" })
+      .select("date")
       .eq("elder_profile_id", elderId)
       .eq("skipped", false)
-      .then(({ count }) => setStreak(count ?? 0));
+      .order("date", { ascending: false })
+      .limit(400)
+      .then(({ data }) => setStreak(computeStreak((data ?? []).map((r) => r.date as string))));
     supabase
       .from("video_letter")
       .select("id,title,video_url")

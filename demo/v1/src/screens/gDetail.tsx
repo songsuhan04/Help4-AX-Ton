@@ -7,6 +7,7 @@ import { TrendChart, type TrendPoint } from "../components/TrendChart";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getSignedUrl, deleteFromBucket } from "../lib/storage";
 import { getRpcErrorMessage } from "../lib/errors";
+import { computeStreak } from "../lib/streak";
 import type { RiskLevel } from "../config/riskConstants";
 
 const TREND_DAYS = 14;
@@ -54,6 +55,7 @@ export default function GDetail() {
   const [myLetters, setMyLetters] = useState<LetterRow[]>([]);
   const [voice, setVoice] = useState<VoiceRow | null>(null);
   const [trend, setTrend] = useState<TrendPoint[]>([]);
+  const [streak, setStreak] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -144,6 +146,15 @@ export default function GDetail() {
         const byDate = new Map((data ?? []).map((r) => [r.date as string, r.level as RiskLevel]));
         setTrend(days.map((date) => ({ date, level: byDate.get(date) ?? null })));
       });
+    // 연속 참여 기록 — 기능설계서.md §1 "연속 참여 기록"
+    supabase
+      .from("daily_checkin")
+      .select("date")
+      .eq("elder_profile_id", elderId)
+      .eq("skipped", false)
+      .order("date", { ascending: false })
+      .limit(400)
+      .then(({ data }) => setStreak(computeStreak((data ?? []).map((r) => r.date as string))));
   }, [elderId]);
 
   async function markChecked() {
@@ -187,6 +198,7 @@ export default function GDetail() {
       </div>
       <h1 className="g-title">{elder.name} <span style={{ fontSize: 14, color: "var(--ink3)" }}>{elder.relationship}</span></h1>
 
+      {streak > 0 && <p className="g-sub">{streak}일 연속 안부를 남기고 있어요</p>}
       {risk ? <p className="g-sub">{risk.reason}</p> : <p className="g-sub">특별한 위험 신호가 없습니다.</p>}
 
       <div style={{ display: "flex", gap: 8 }}>

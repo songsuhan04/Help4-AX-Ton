@@ -16,6 +16,7 @@ import ECheck from "./screens/eCheck";
 import ESpeech from "./screens/eSpeech";
 import EDone from "./screens/eDone";
 import ERecord from "./screens/eRecord";
+import ELetters from "./screens/eLetters";
 import AuthCallback from "./screens/authCallback";
 
 export function AppRoutes() {
@@ -39,6 +40,7 @@ export function AppRoutes() {
       <Route path="/elder/speech" element={<ElderRoute><ESpeech /></ElderRoute>} />
       <Route path="/elder/done" element={<ElderRoute><EDone /></ElderRoute>} />
       <Route path="/elder/record" element={<ElderRoute><ERecord /></ElderRoute>} />
+      <Route path="/elder/letters" element={<ElderRoute><ELetters /></ElderRoute>} />
     </Routes>
   );
 }

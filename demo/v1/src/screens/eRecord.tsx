@@ -6,6 +6,7 @@ import { createTestBlob, startRecording, type RecordingHandle } from "../lib/rec
 import { uploadToBucket } from "../lib/storage";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
+import { fs } from "../lib/fontScale";
 
 export const SCREEN_ID = "eRecord";
 
@@ -84,7 +85,7 @@ export default function ERecord() {
           <span>영상편지</span>
           <SpeakButton text="하고 싶은 말씀을 하세요" />
         </div>
-        <h1 className="e-question" style={{ fontSize: 24 }}>하고 싶은 말씀을 하세요</h1>
+        <h1 className="e-question" style={{ fontSize: fs(24) }}>하고 싶은 말씀을 하세요</h1>
 
         <video ref={liveRef} autoPlay muted style={{ width: "100%", borderRadius: 12, background: "rgba(0,0,0,0.3)", aspectRatio: "4/3", marginBottom: 16 }} />
 
@@ -118,7 +119,7 @@ export default function ERecord() {
         <div className="e-topbar">
           <span>영상편지</span>
         </div>
-        <h1 className="e-question" style={{ fontSize: 24 }}>이렇게 보낼까요?</h1>
+        <h1 className="e-question" style={{ fontSize: fs(24) }}>이렇게 보낼까요?</h1>
         <p style={{ color: "rgba(255,255,255,0.7)" }}>다시 찍으시려면 아래 버튼을 눌러주세요</p>
 
         {previewUrl.current && (
@@ -140,13 +141,13 @@ export default function ERecord() {
       <div className="e-topbar">
         <span>영상편지</span>
       </div>
-      <h1 className="e-question" style={{ fontSize: 24 }}>영상편지를 보냈어요</h1>
+      <h1 className="e-question" style={{ fontSize: fs(24) }}>영상편지를 보냈어요</h1>
 
       {previewUrl.current && (
         <video src={previewUrl.current} controls style={{ width: "100%", borderRadius: 12, background: "#000", aspectRatio: "4/3", marginBottom: 16 }} />
       )}
 
-      <button className="e-primary" onClick={() => navigate("/elder/check")}>
+      <button className="e-primary" onClick={() => navigate("/elder/home")}>
         처음 화면으로
       </button>
     </AppShell>

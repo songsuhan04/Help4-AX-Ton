@@ -5,6 +5,7 @@ import { SpeakButton } from "../components/SpeakButton";
 import { redeemInvite } from "../lib/elderSession";
 import { supabaseConfigured } from "../lib/supabase";
 import { getErrorMessage } from "../lib/errors";
+import { fs } from "../lib/fontScale";
 
 export const SCREEN_ID = "eInvited";
 
@@ -34,8 +35,8 @@ export default function EInvited() {
         <span>Callog</span>
       </div>
       <div style={{ textAlign: "center", padding: "40px 0" }}>
-        <div style={{ fontSize: 40, marginBottom: 16 }}>🌿</div>
-        <h1 className="e-question" style={{ fontSize: 24 }}>{message}</h1>
+        <div style={{ fontSize: fs(40), marginBottom: 16 }}>🌿</div>
+        <h1 className="e-question" style={{ fontSize: fs(24) }}>{message}</h1>
         <p style={{ color: "rgba(255,255,255,0.75)" }}>하루에 한 번, 잘 지내시는지 짧게 여쭐게요.</p>
       </div>
 
@@ -43,7 +44,7 @@ export default function EInvited() {
       {error && <p style={{ color: "#ffb4a8", textAlign: "center" }}>{error}</p>}
 
       <SpeakButton text={message + ". 하루에 한 번, 잘 지내시는지 짧게 여쭐게요."} />
-      <button className="e-primary" style={{ marginTop: 16 }} disabled={loading} onClick={() => navigate("/elder/check")}>
+      <button className="e-primary" style={{ marginTop: 16 }} disabled={loading} onClick={() => navigate("/elder/home")}>
         시작하기
       </button>
     </AppShell>

@@ -12,6 +12,7 @@ import GAdmin from "./screens/gAdmin";
 import GDetail from "./screens/gDetail";
 import GLetter from "./screens/gLetter";
 import EInvited from "./screens/eInvited";
+import EHome from "./screens/eHome";
 import ECheck from "./screens/eCheck";
 import ESpeech from "./screens/eSpeech";
 import EDone from "./screens/eDone";
@@ -36,6 +37,7 @@ export function AppRoutes() {
       <Route path="/guardian/elders/:elderId" element={<GuardianRoute><GDetail /></GuardianRoute>} />
       <Route path="/guardian/elders/:elderId/letter" element={<GuardianRoute><GLetter /></GuardianRoute>} />
 
+      <Route path="/elder/home" element={<ElderRoute><EHome /></ElderRoute>} />
       <Route path="/elder/check" element={<ElderRoute><ECheck /></ElderRoute>} />
       <Route path="/elder/speech" element={<ElderRoute><ESpeech /></ElderRoute>} />
       <Route path="/elder/done" element={<ElderRoute><EDone /></ElderRoute>} />

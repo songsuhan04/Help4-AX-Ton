@@ -4,6 +4,7 @@ import { AppShell } from "../components/AppShell";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSignedUrl } from "../lib/storage";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
+import { fs } from "../lib/fontScale";
 
 export const SCREEN_ID = "eLetters";
 
@@ -66,7 +67,7 @@ export default function ELetters() {
       <div className="e-topbar">
         <span>영상편지 모아보기</span>
       </div>
-      <h1 className="e-question" style={{ fontSize: 24 }}>가족이 보낸 영상편지</h1>
+      <h1 className="e-question" style={{ fontSize: fs(24) }}>가족이 보낸 영상편지</h1>
 
       {loading && <p style={{ color: "rgba(255,255,255,0.7)" }}>불러오는 중...</p>}
       {!loading && letters.length === 0 && (
@@ -76,12 +77,12 @@ export default function ELetters() {
       {letters.map((letter) => (
         <div key={letter.id} style={{ background: "rgba(255,255,255,0.08)", borderRadius: 14, padding: 16, marginBottom: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
+            <div style={{ fontSize: fs(13), color: "rgba(255,255,255,0.6)" }}>
               {new Date(letter.sent_at).toLocaleString("ko-KR")}
             </div>
-            {!letter.viewed_at && <span style={{ fontSize: 12, color: "var(--gold)", fontWeight: 700 }}>새 편지</span>}
+            {!letter.viewed_at && <span style={{ fontSize: fs(12), color: "var(--gold)", fontWeight: 700 }}>새 편지</span>}
           </div>
-          <div style={{ marginBottom: 8, fontSize: 17 }}>{letter.title}</div>
+          <div style={{ marginBottom: 8, fontSize: fs(17) }}>{letter.title}</div>
           {letter.signedUrl && (
             <video
               src={letter.signedUrl}

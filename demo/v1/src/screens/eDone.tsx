@@ -6,6 +6,7 @@ import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSignedUrl } from "../lib/storage";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { computeStreak } from "../lib/streak";
+import { fs } from "../lib/fontScale";
 
 export const SCREEN_ID = "eDone";
 
@@ -61,20 +62,20 @@ export default function EDone() {
         <span>Callog</span>
       </div>
       <div style={{ textAlign: "center", padding: "24px 0" }}>
-        <div style={{ fontSize: 40 }}>✓</div>
-        <h1 style={{ fontSize: 26 }}>잘 하셨어요</h1>
+        <div style={{ fontSize: fs(40) }}>✓</div>
+        <h1 style={{ fontSize: fs(26) }}>잘 하셨어요</h1>
         <p style={{ color: "rgba(255,255,255,0.75)" }}>오늘 안부를 가족에게 전했어요.</p>
         <div className="e-streak">
           {dots.map((filled, i) => (
             <span key={i} className={filled ? "e-streak-dot e-streak-dot--filled" : "e-streak-dot"} />
           ))}
         </div>
-        <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>{streak}일 연속 안부를 남기셨어요</p>
+        <p style={{ color: "rgba(255,255,255,0.6)", fontSize: fs(13) }}>{streak}일 연속 안부를 남기셨어요</p>
       </div>
 
       {letter && (
         <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 12, padding: 16, marginBottom: 12 }}>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>가족이 보냈어요</div>
+          <div style={{ fontSize: fs(13), color: "rgba(255,255,255,0.6)" }}>가족이 보냈어요</div>
           <div style={{ marginBottom: 8 }}>{letter.title}</div>
           {letterUrl && <video src={letterUrl} controls style={{ width: "100%", borderRadius: 8 }} />}
         </div>
@@ -87,7 +88,7 @@ export default function EDone() {
       <button className="e-secondary" onClick={() => navigate("/elder/letters")}>
         가족 영상편지 모아보기
       </button>
-      <button className="e-secondary" onClick={() => navigate("/elder/check")}>
+      <button className="e-secondary" onClick={() => navigate("/elder/home")}>
         처음 화면으로
       </button>
     </AppShell>

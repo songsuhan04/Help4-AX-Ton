@@ -16,3 +16,9 @@ export async function getSignedUrl(bucket: "voice" | "letters", path: string, ex
   if (error) throw error;
   return data.signedUrl;
 }
+
+export async function deleteFromBucket(bucket: "voice" | "letters", path: string) {
+  const supabase = getSupabase();
+  const { error } = await supabase.storage.from(bucket).remove([path]);
+  if (error) throw error;
+}

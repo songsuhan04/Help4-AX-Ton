@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
+import { getRpcErrorMessage } from "../lib/errors";
 
 export const SCREEN_ID = "invite";
 
@@ -22,7 +23,7 @@ export default function Invite() {
     getSupabase()
       .rpc("create_invite", { p_elder: elderId })
       .then(({ data, error }) => {
-        if (error) setError(error.message);
+        if (error) setError(getRpcErrorMessage(error, "초대 링크 생성에 실패했습니다"));
         else setLink(`${window.location.origin}/e/${data as string}`);
         setLoading(false);
       });

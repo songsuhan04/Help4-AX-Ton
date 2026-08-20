@@ -4,7 +4,8 @@ import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
 import { RiskDot } from "../components/RiskDot";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
-import { getSignedUrl } from "../lib/storage";
+import { getSignedUrl, deleteFromBucket } from "../lib/storage";
+import { getRpcErrorMessage } from "../lib/errors";
 import type { RiskLevel } from "../config/riskConstants";
 
 export const SCREEN_ID = "gDetail";
@@ -31,12 +32,21 @@ interface LetterRow {
   signedUrl?: string;
 }
 
+interface VoiceRow {
+  id: string;
+  audio_url: string;
+  created_at: string;
+  signedUrl?: string;
+}
+
 export default function GDetail() {
   const { elderId } = useParams<{ elderId: string }>();
   const navigate = useNavigate();
   const [elder, setElder] = useState<ElderDetail | null>(null);
   const [risk, setRisk] = useState<RiskRow | null>(null);
   const [letters, setLetters] = useState<LetterRow[]>([]);
+  const [myLetters, setMyLetters] = useState<LetterRow[]>([]);
+  const [voice, setVoice] = useState<VoiceRow | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,6 +84,43 @@ export default function GDetail() {
         );
         setLetters(withUrls);
       });
+    // 내가(보호자) 보낸 영상편지 — 잘못 보낸 걸 확인하고 지울 수 있어야 함
+    supabase.auth.getUser().then(async ({ data: userData }) => {
+      if (!userData.user) return;
+      const { data } = await supabase
+        .from("video_letter")
+        .select("id,title,video_url,sent_at")
+        .eq("sender_type", "family")
+        .eq("sender_id", userData.user.id)
+        .eq("receiver_id", elderId)
+        .order("sent_at", { ascending: false });
+      const rows = (data ?? []) as LetterRow[];
+      const withUrls = await Promise.all(
+        rows.map(async (row) => ({ ...row, signedUrl: await getSignedUrl("letters", row.video_url).catch(() => undefined) }))
+      );
+      setMyLetters(withUrls);
+    });
+    // 최근 말하기 안부 음성 — 보호자도 직접 들을 수 있어야 함
+    supabase
+      .from("daily_checkin")
+      .select("id")
+      .eq("elder_profile_id", elderId)
+      .order("date", { ascending: false })
+      .limit(7)
+      .then(async ({ data: checkins }) => {
+        const ids = (checkins ?? []).map((c) => c.id);
+        if (ids.length === 0) return;
+        const { data } = await supabase
+          .from("voice_response")
+          .select("id,audio_url,created_at")
+          .in("daily_checkin_id", ids)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!data) return;
+        const signedUrl = await getSignedUrl("voice", data.audio_url).catch(() => undefined);
+        setVoice({ ...(data as VoiceRow), signedUrl });
+      });
   }, [elderId]);
 
   async function markChecked() {
@@ -90,9 +137,20 @@ export default function GDetail() {
 
   async function reinvite() {
     setBusy(true);
-    await getSupabase().rpc("revoke_elder_access", { p_elder: elderId });
+    const { error } = await getSupabase().rpc("revoke_elder_access", { p_elder: elderId });
     setBusy(false);
+    if (error) {
+      setError(getRpcErrorMessage(error, "재초대에 실패했습니다"));
+      return;
+    }
     navigate(`/guardian/elders/${elderId}/invite`);
+  }
+
+  async function deleteMyLetter(letter: LetterRow) {
+    if (!window.confirm("이 영상편지를 삭제할까요? 되돌릴 수 없습니다.")) return;
+    await deleteFromBucket("letters", letter.video_url).catch(() => {});
+    await getSupabase().from("video_letter").delete().eq("id", letter.id);
+    setMyLetters((prev) => prev.filter((l) => l.id !== letter.id));
   }
 
   if (!elder) return <AppShell>{error ? <p style={{ color: "var(--red)" }}>{error}</p> : <p>불러오는 중...</p>}</AppShell>;
@@ -132,6 +190,17 @@ export default function GDetail() {
       <button className="g-button g-button--secondary" onClick={reinvite} disabled={busy}>
         재초대 (기기 변경 시)
       </button>
+      {error && <p style={{ color: "var(--red)", fontSize: 13 }}>{error}</p>}
+
+      {voice?.signedUrl && (
+        <div style={{ marginTop: 24 }}>
+          <div className="g-header">최근 말하기 안부</div>
+          <div style={{ fontSize: 13, color: "var(--ink3)", marginBottom: 6 }}>
+            {new Date(voice.created_at).toLocaleString("ko-KR")}
+          </div>
+          <audio src={voice.signedUrl} controls style={{ width: "100%" }} />
+        </div>
+      )}
 
       <div style={{ marginTop: 24 }}>
         <div className="g-header">{elder.name}님이 보낸 영상편지</div>
@@ -143,6 +212,23 @@ export default function GDetail() {
             </div>
             <div style={{ marginBottom: 8 }}>{letter.title}</div>
             {letter.signedUrl && <video src={letter.signedUrl} controls style={{ width: "100%", borderRadius: 8 }} />}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 24 }}>
+        <div className="g-header">내가 보낸 영상편지</div>
+        {myLetters.length === 0 && <p className="g-sub">아직 보낸 영상편지가 없습니다.</p>}
+        {myLetters.map((letter) => (
+          <div key={letter.id} style={{ background: "var(--mist)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
+            <div style={{ fontSize: 13, color: "var(--ink3)", marginBottom: 6 }}>
+              {new Date(letter.sent_at).toLocaleString("ko-KR")}
+            </div>
+            <div style={{ marginBottom: 8 }}>{letter.title}</div>
+            {letter.signedUrl && <video src={letter.signedUrl} controls style={{ width: "100%", borderRadius: 8, marginBottom: 8 }} />}
+            <button className="g-button g-button--secondary" onClick={() => deleteMyLetter(letter)}>
+              삭제
+            </button>
           </div>
         ))}
       </div>

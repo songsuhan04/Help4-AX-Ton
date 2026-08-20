@@ -8,3 +8,16 @@ export function getErrorMessage(err: unknown, fallback: string): string {
   }
   return fallback;
 }
+
+// create_invite/revoke_elder_access 등 RPC가 raise exception으로 던지는 코드성 메시지를
+// 사용자에게 그대로 보여주면 의미가 안 통해서(예: "not_authorized"), 알려진 코드는 친절한
+// 문구로 바꾸고 나머지는 getErrorMessage() 그대로 노출한다.
+const RPC_ERROR_MESSAGES: Record<string, string> = {
+  not_authorized: "이 어르신에 대한 권한이 없습니다. 본인 계정으로 다시 로그인해주세요.",
+  bound_to_other_device: "이미 다른 기기에서 연결된 초대 링크입니다.",
+};
+
+export function getRpcErrorMessage(err: unknown, fallback: string): string {
+  const message = getErrorMessage(err, fallback);
+  return RPC_ERROR_MESSAGES[message] ?? message;
+}

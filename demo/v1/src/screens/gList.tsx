@@ -39,6 +39,16 @@ export default function GList() {
     supabase.rpc("is_admin").then(({ data }) => setIsAdmin(Boolean(data)));
   }, []);
 
+  async function deleteElder(elder: ElderRow) {
+    if (!window.confirm(`${elder.name}님을 목록에서 삭제할까요? 관련된 안부 기록·영상편지·위험도 이력이 모두 함께 삭제되며 되돌릴 수 없습니다.`)) return;
+    const { error } = await getSupabase().from("elder_profile").delete().eq("id", elder.id);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    setElders((prev) => prev.filter((e) => e.id !== elder.id));
+  }
+
   return (
     <AppShell>
       <div className="g-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -73,6 +83,16 @@ export default function GList() {
             }}
           >
             수정
+          </span>
+          <span
+            role="button"
+            style={{ color: "var(--red)", fontSize: 13, padding: "4px 8px" }}
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteElder(elder);
+            }}
+          >
+            삭제
           </span>
           <span style={{ color: "var(--ink3)" }}>›</span>
         </button>

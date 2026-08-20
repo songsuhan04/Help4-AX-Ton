@@ -9,10 +9,20 @@ import { getSupabase, supabaseConfigured } from "../lib/supabase";
 
 export const SCREEN_ID = "eSpeech";
 
-const QUESTION = "가족에게 한마디 해주세요";
+// 매번 같은 질문만 나오면 심심하니 주제를 여러 개 두고 무작위로 골라 던져준다.
+// 근거: 실사용 피드백 — "음성 녹음할 때 주제를 던져주면 좋을 것 같다"
+const TOPICS = [
+  "가족에게 한마디 해주세요",
+  "오늘 하루는 어떠셨어요? 편하게 말씀해주세요",
+  "요즘 있었던 즐거운 일을 이야기해주세요",
+  "오늘 드신 음식 중에 뭐가 제일 맛있었어요?",
+  "요즘 몸은 좀 어떠신지 말씀해주세요",
+  "옛날 이야기 하나 들려주세요",
+];
 
 export default function ESpeech() {
   const navigate = useNavigate();
+  const [topic] = useState(() => TOPICS[Math.floor(Math.random() * TOPICS.length)]);
   const [recording, setRecording] = useState<RecordingHandle | null>(null);
   const [busy, setBusy] = useState(false);
   const startedAt = useState(() => Date.now())[0];
@@ -81,9 +91,9 @@ export default function ESpeech() {
       </button>
       <div className="e-topbar">
         <span>마지막</span>
-        <SpeakButton text={QUESTION} />
+        <SpeakButton text={topic} />
       </div>
-      <h1 className="e-question">{QUESTION}</h1>
+      <h1 className="e-question">{topic}</h1>
       <p style={{ color: "rgba(255,255,255,0.7)" }}>천천히 말씀하시면 됩니다</p>
 
       {!recording && (

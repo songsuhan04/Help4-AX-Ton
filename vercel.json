@@ -1,5 +1,6 @@
 {
   "buildCommand": "cd demo/v1 && npm install && npm run build",
   "outputDirectory": "demo/v1/dist",
-  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }]
+  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }],
+  "crons": [{ "path": "/api/cleanup-old-letters", "schedule": "0 18 * * *" }]
 }

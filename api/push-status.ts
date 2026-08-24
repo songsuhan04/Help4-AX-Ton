@@ -25,10 +25,15 @@ export default function handler(_req: VercelRequest, res: VercelResponse) {
     };
   };
 
+  // 이름 오타/접두어 누락을 찾기 위해 VAPID가 들어간 환경변수 "이름"만 나열한다.
+  // 값은 담지 않는다 — 이름은 비밀이 아니고, 이게 없으면 무엇이 잘못 등록됐는지 알 수 없다.
+  const vapidVarNames = Object.keys(process.env).filter((k) => /vapid/i.test(k)).sort();
+
   res.status(200).json({
     publicKey: describe(pub, 87),
     privateKey: describe(priv, 43),
     // sendPush.ts의 ensureConfigured()와 동일한 조건
     wouldSendPush: Boolean(pub && priv),
+    registeredVapidVarNames: vapidVarNames,
   });
 }

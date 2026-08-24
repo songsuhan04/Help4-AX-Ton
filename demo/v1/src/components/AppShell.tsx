@@ -1,6 +1,8 @@
 import { useEffect, type ReactNode } from "react";
 import { supabaseConfigured } from "../lib/supabase";
 import { clearElderDisplay, restoreElderDisplay } from "../lib/elderDisplay";
+import { clearGuardianDisplay, restoreGuardianDisplay } from "../lib/guardianDisplay";
+import { GuardianDisplaySettings } from "./GuardianDisplaySettings";
 
 interface AppShellProps {
   variant?: "guardian" | "elder";
@@ -14,11 +16,16 @@ interface AppShellProps {
 }
 
 export function AppShell({ variant = "guardian", aside, children }: AppShellProps) {
-  // 어르신이 고른 바탕/글씨 크기는 어르신 화면에서만 적용한다.
-  // 보호자가 같은 기기에서 열었을 때 "또렷하게"(검정+노랑)로 보이면 곤란하다.
+  // 어르신이 고른 바탕/글씨 크기는 어르신 화면에서만, 보호자가 고른 것은 보호자
+  // 화면에서만 적용한다. 같은 기기에서 두 화면을 오갈 때 서로의 설정이 섞이면 안 된다.
   useEffect(() => {
-    if (variant === "elder") restoreElderDisplay();
-    else clearElderDisplay();
+    if (variant === "elder") {
+      clearGuardianDisplay();
+      restoreElderDisplay();
+    } else {
+      clearElderDisplay();
+      restoreGuardianDisplay();
+    }
   }, [variant]);
 
   const banner = !supabaseConfigured ? (
@@ -38,6 +45,7 @@ export function AppShell({ variant = "guardian", aside, children }: AppShellProp
     return (
       <div className="app-shell app-shell--wide">
         {banner}
+        <GuardianDisplaySettings />
         <div className="g-layout">
           <aside className="g-aside">{aside}</aside>
           <main className="g-main">
@@ -51,6 +59,7 @@ export function AppShell({ variant = "guardian", aside, children }: AppShellProp
   return (
     <div className="app-shell">
       {banner}
+      <GuardianDisplaySettings />
       <div className="app-card">{children}</div>
     </div>
   );

@@ -8,6 +8,174 @@
  * 지금처럼 가운데 좁은 카드(.app-card)를 그대로 쓴다.
  */
 
+/* ===== 화면 설정(보호자) =====
+ * 어르신 화면의 화면 설정(elder.css)과 같은 이유로 보호자에게도 둔다 — 잘 보이는 화면은
+ * 사람마다 다르다. data-guardian-theme이 없으면(기본 "다크") theme.css의 :root 값을
+ * 그대로 쓴다. :root와 명시적으로 함께 써서 특정도를 일반 :root보다 높여 항상 이긴다.
+ */
+:root[data-guardian-theme="light"] {
+  --bg: #f7f8fb;
+  --surface: #ffffff;
+  --surface-2: #edeff5;
+  --line: rgba(17, 19, 24, 0.12);
+  --text: #111318;
+  --text-2: #565c6b;
+  --text-3: #7a8094;
+  --primary: #2a37b8;
+  --primary-hi: #3d4ad1;
+  --primary-ink: #ffffff;
+  --accent: #c81734;
+}
+
+:root[data-guardian-theme="warm"] {
+  --bg: #1b1512;
+  --surface: #2a211c;
+  --surface-2: #382c25;
+  --line: rgba(255, 246, 238, 0.14);
+  --text: #fff6ee;
+  --text-2: rgba(255, 246, 238, 0.68);
+  --text-3: rgba(255, 246, 238, 0.48);
+  --primary: #c4622a;
+  --primary-hi: #d6763c;
+  --primary-ink: #ffffff;
+  --accent: #e8a33c;
+}
+
+:root[data-guardian-theme="maxcontrast"] {
+  --bg: #000000;
+  --surface: #101010;
+  --surface-2: #1c1c1c;
+  --line: #4a4a4a;
+  --text: #ffffff;
+  --text-2: #d6d6d6;
+  --text-3: #aaaaaa;
+  --primary: #ffd400;
+  --primary-hi: #ffe066;
+  --primary-ink: #000000;
+  --accent: #ffd400;
+}
+
+.g-display-trigger {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: calc(13px * var(--font-scale));
+  font-weight: 700;
+  padding: 8px 14px;
+  box-shadow: var(--shadow);
+}
+
+.g-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 60;
+  padding: 10px;
+}
+
+.g-sheet {
+  width: 100%;
+  max-width: 480px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 16px 18px 20px;
+  box-shadow: 0 -12px 44px rgba(0, 0, 0, 0.45);
+}
+
+@media (min-width: 768px) {
+  .g-sheet-backdrop {
+    align-items: center;
+  }
+}
+
+.g-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+
+.g-sheet-close {
+  flex: none;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: calc(14px * var(--font-scale));
+  font-weight: 700;
+  padding: 8px 16px;
+}
+
+.g-sheet-title {
+  font-size: calc(18px * var(--font-scale));
+  font-weight: 800;
+  margin: 0;
+}
+
+.g-sheet-sub {
+  font-size: calc(13px * var(--font-scale));
+  color: var(--text-2);
+  margin: 0 0 12px;
+}
+
+.g-opt-group {
+  margin-bottom: 14px;
+}
+
+.g-opt-legend {
+  font-size: calc(13px * var(--font-scale));
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-2);
+}
+
+.g-opt-row {
+  display: grid;
+  gap: 8px;
+}
+
+.g-opt-row--four {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.g-opt-row--three {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.g-opt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  border: 2px solid var(--line);
+  border-radius: var(--r);
+  padding: 10px 6px;
+  color: var(--text);
+  font-size: calc(13px * var(--font-scale));
+  font-weight: 700;
+}
+
+.g-opt[aria-pressed="true"] {
+  border-color: var(--opt-ring, var(--primary));
+  box-shadow: 0 0 0 2px var(--opt-ring, var(--primary));
+}
+
 /* ===== 대시보드 레이아웃 ===== */
 
 .g-layout {
@@ -55,7 +223,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale));
   font-weight: 800;
   letter-spacing: -0.01em;
   color: var(--text);
@@ -99,7 +267,7 @@
     display: block;
     margin-top: auto;
     padding: 0 8px;
-    font-size: 11.5px;
+    font-size: calc(11.5px * var(--font-scale));
     line-height: 1.55;
     color: var(--text-3);
   }
@@ -138,7 +306,7 @@
 /* ===== 글 ===== */
 
 .g-header {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -150,7 +318,7 @@
 }
 
 .g-title {
-  font-size: 25px;
+  font-size: calc(25px * var(--font-scale));
   font-weight: 800;
   letter-spacing: -0.025em;
   line-height: 1.25;
@@ -159,21 +327,21 @@
 }
 
 .g-title small {
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   font-weight: 600;
   color: var(--text-3);
   margin-left: 6px;
 }
 
 .g-sub {
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   color: var(--text-2);
   margin: 0 0 18px;
   line-height: 1.6;
 }
 
 .g-error {
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--font-scale));
   color: var(--crit-fg);
   background: var(--crit-bg);
   border-radius: var(--r-sm);
@@ -182,14 +350,14 @@
 }
 
 .g-legal {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   color: var(--text-3);
   line-height: 1.65;
   margin-top: 28px;
 }
 
 .g-link {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--primary-hi);
   display: inline-block;
 }
@@ -199,7 +367,7 @@
   text-align: center;
   margin-top: 24px;
   color: var(--text-3);
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
 }
 
 /* ===== 요약 타일 =====
@@ -232,13 +400,13 @@
 }
 
 .g-stat-label {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   font-weight: 600;
   color: var(--text-2);
 }
 
 .g-stat-value {
-  font-size: 26px;
+  font-size: calc(26px * var(--font-scale));
   font-weight: 800;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
@@ -246,7 +414,7 @@
 }
 
 .g-stat-value small {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   font-weight: 600;
   color: var(--text-3);
   margin-left: 3px;
@@ -267,7 +435,7 @@
 }
 
 .g-card-title {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -326,32 +494,32 @@
 }
 
 .g-list-name {
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   font-weight: 700;
   line-height: 1.35;
 }
 
 .g-list-name small {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   font-weight: 600;
   color: var(--text-3);
   margin-left: 5px;
 }
 
 .g-list-meta {
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--font-scale));
   color: var(--text-3);
   line-height: 1.5;
 }
 
 .g-chev {
   color: var(--text-3);
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale));
   flex: none;
 }
 
 .g-rowaction {
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--font-scale));
   font-weight: 600;
   color: var(--text-3);
   padding: 4px 8px;
@@ -365,7 +533,7 @@
 
 /* 위험도 배지 — 색만으로 구분하지 않도록 글자도 함께 넣는다 */
 .g-pill {
-  font-size: 11.5px;
+  font-size: calc(11.5px * var(--font-scale));
   font-weight: 800;
   letter-spacing: 0.02em;
   padding: 3px 9px;
@@ -398,7 +566,7 @@
   padding: 13px 16px;
   border-radius: var(--r-sm);
   border: 1px solid transparent;
-  font-size: 14.5px;
+  font-size: calc(14.5px * var(--font-scale));
   font-weight: 700;
   background: var(--primary);
   color: var(--primary-ink);
@@ -440,7 +608,7 @@
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--text-2);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   font-weight: 600;
   padding: 7px 14px;
   margin-bottom: 14px;
@@ -454,7 +622,7 @@
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--text-2);
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   font-weight: 600;
   margin: 0 8px 8px 0;
 }
@@ -473,7 +641,7 @@
 
 .g-field label {
   display: block;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   font-weight: 600;
   color: var(--text-2);
   margin-bottom: 6px;
@@ -486,7 +654,7 @@
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   font-family: inherit;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   background: var(--surface-2);
   color: var(--text);
 }
@@ -510,7 +678,7 @@
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-2);
   line-height: 1.55;
 }
@@ -538,7 +706,7 @@
 }
 
 .g-consent-toggle {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   color: var(--primary-hi);
   background: none;
   border: none;
@@ -549,7 +717,7 @@
 }
 
 .g-consent-detail {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   color: var(--text-2);
   background: var(--surface-2);
   border-radius: var(--r-sm);
@@ -564,7 +732,7 @@
   background: var(--surface-2);
   border-radius: var(--r-sm);
   padding: 11px 13px;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   line-height: 1.65;
   color: var(--text-2);
   margin-top: 12px;
@@ -577,7 +745,7 @@
 
 .g-note-label {
   display: block;
-  font-size: 10px;
+  font-size: calc(10px * var(--font-scale));
   font-weight: 700;
   letter-spacing: 0.11em;
   text-transform: uppercase;
@@ -586,7 +754,7 @@
 }
 
 .g-timestamp {
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--font-scale));
   color: var(--text-3);
   margin-bottom: 6px;
   font-variant-numeric: tabular-nums;
@@ -614,7 +782,7 @@
 
 .g-letter-title {
   margin-bottom: 8px;
-  font-size: 14.5px;
+  font-size: calc(14.5px * var(--font-scale));
   font-weight: 600;
 }
 
@@ -633,7 +801,7 @@
 .g-questions {
   margin: 0;
   padding-left: 20px;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   line-height: 1.7;
 }
 
@@ -644,14 +812,14 @@
 }
 
 .g-terms-heading {
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   font-weight: 700;
   color: var(--text);
   margin: 0 0 6px;
 }
 
 .g-terms-section p {
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--font-scale));
   line-height: 1.75;
   color: var(--text-2);
   margin: 0 0 8px;
@@ -663,5 +831,5 @@
   width: auto;
   margin-left: auto;
   padding: 7px 14px;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
 }

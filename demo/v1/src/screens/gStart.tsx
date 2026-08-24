@@ -37,6 +37,13 @@ export default function GStart() {
 
   return (
     <AppShell>
+      <img
+        src="/callog-icon.png"
+        alt="Callog(콜록)"
+        width={64}
+        height={64}
+        style={{ borderRadius: 16, marginBottom: 16, display: "block" }}
+      />
       <div className="g-header">Callog(콜록)</div>
       <h1 className="g-title">보호자로 시작하기</h1>
       <p className="g-sub">어르신을 등록하고 초대하면, 어르신은 링크만 한 번 누르면 됩니다.</p>

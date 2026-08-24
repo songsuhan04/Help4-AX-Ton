@@ -8,7 +8,10 @@ import { getSupabase } from "./supabase";
 // iOS는 사파리 탭에서는 구독이 안 되고 "홈 화면에 추가"로 설치한 경우에만 된다(iOS 16.4+).
 // 그래서 지원 여부를 먼저 확인해 안내 문구를 다르게 보여준다.
 
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
+// 값에 실수로 "VAPID_PUBLIC_KEY=" 접두어나 공백이 섞여 들어오는 일이 실제로 있었어서
+// (Vercel 환경변수에 이름=값 형태를 통째로 붙여넣는 경우) 방어적으로 정리한다.
+const RAW_VAPID_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
+const VAPID_PUBLIC_KEY = RAW_VAPID_KEY?.trim().replace(/^VITE_VAPID_PUBLIC_KEY=/, "").replace(/^VAPID_PUBLIC_KEY=/, "");
 
 export const pushConfigured = Boolean(VAPID_PUBLIC_KEY);
 

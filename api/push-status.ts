@@ -6,8 +6,11 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 // ⚠️ 키 값 자체는 절대 응답에 담지 않는다. 존재 여부와 길이·형식 위반만 알려준다.
 // (공개키 87자, 비밀키 43자, 둘 다 URL-safe base64라 '='/'+'/'/' 가 없어야 정상)
 export default function handler(_req: VercelRequest, res: VercelResponse) {
-  const pub = process.env.VITE_VAPID_PUBLIC_KEY;
-  const priv = process.env.VAPID_PRIVATE_KEY;
+  const raw = (v: string | undefined) => v;
+  const clean = (v: string | undefined) =>
+    v?.trim().replace(/^VITE_VAPID_PUBLIC_KEY=/, "").replace(/^VAPID_(PUBLIC|PRIVATE)_KEY=/, "") || undefined;
+  const pub = clean(raw(process.env.VITE_VAPID_PUBLIC_KEY));
+  const priv = clean(raw(process.env.VAPID_PRIVATE_KEY));
 
   const describe = (v: string | undefined, expectedLen: number) => {
     if (!v) return { present: false };

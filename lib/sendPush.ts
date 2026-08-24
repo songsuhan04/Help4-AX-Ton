@@ -9,9 +9,15 @@ import webpush from "web-push";
 
 let configured = false;
 
+// 환경변수에 "이름=값" 형태를 통째로 붙여넣어 접두어가 섞여 들어온 일이 실제로 있었다.
+// 그때 web-push가 "must be URL safe Base 64" 에러를 던져 원인 찾기가 번거로웠어서 방어한다.
+function clean(v: string | undefined): string | undefined {
+  return v?.trim().replace(/^VITE_VAPID_PUBLIC_KEY=/, "").replace(/^VAPID_(PUBLIC|PRIVATE)_KEY=/, "") || undefined;
+}
+
 function ensureConfigured(): boolean {
-  const publicKey = process.env.VITE_VAPID_PUBLIC_KEY;
-  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  const publicKey = clean(process.env.VITE_VAPID_PUBLIC_KEY);
+  const privateKey = clean(process.env.VAPID_PRIVATE_KEY);
   if (!publicKey || !privateKey) return false;
   if (!configured) {
     // mailto:는 푸시 서비스가 문제 발생 시 연락할 주소 — VAPID 규격 요구사항

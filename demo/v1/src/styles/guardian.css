@@ -25,6 +25,12 @@
   --primary-hi: #3d4ad1;
   --primary-ink: #ffffff;
   --accent: #c81734;
+  /* --safe-fg/--warn-fg/--crit-fg는 어두운 바탕 위에서 밝게 보이도록 만든 값이라
+     흰 바탕에서는 대비가 WCAG AA(4.5:1) 밑으로 떨어진다(1.6~2.1:1로 계산됨).
+     라이트 테마에서만 어둡게 다시 잡아 흰 배경에서도 4.5:1 이상을 유지한다. */
+  --safe-fg: #227650;
+  --warn-fg: #866013;
+  --crit-fg: #bd253a;
 }
 
 :root[data-guardian-theme="warm"] {

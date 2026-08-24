@@ -49,10 +49,14 @@ export async function assessRisk(admin: SupabaseClient, elderProfileId: string, 
       // §3: 관절염 보유자는 외출 없음을 위험 요인으로 보지 않는다
       points = 0;
     } else if (a.category === "medication" && conditionTypes.has("htn") && a.severity !== "ok") {
+      // ×1.5 — Help4/발표 자료/위험도가중치 근거자료.docx §4.1에서 검증 통과(근거등급 A).
+      // 61개 코호트 IPD 100만명 기준 보고된 효과크기 범위(HR/OR 1.36~2.11)의 보수적 하위-중앙값.
       points *= 1.5;
       if (points > 0) reasons.push("복약을 놓치셨어요(고혈압)");
     } else if (a.category === "meal" && conditionTypes.has("diabetes") && a.severity !== "ok") {
-      points *= 2.4;
+      // ×2.0 — 위와 같은 문서 §4.2 권고값(근거등급 A: INTERHEART OR 2.37, IPD 메타분석 HR 1.44).
+      // 문서는 "당뇨 가중치가 고혈압보다 높아야 상대 서열이 문헌과 일치한다"고 명시 — 기존 ×2.4(임의값)에서 조정.
+      points *= 2.0;
       if (points > 0) reasons.push("식사를 거르셨어요(당뇨병 저혈당 위험)");
     } else if (points > 0) {
       reasons.push(`"${a.question}" 응답이 평소와 다릅니다`);

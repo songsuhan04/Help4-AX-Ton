@@ -15,12 +15,18 @@ interface ElderRow {
   priority_status: RiskLevel;
 }
 
+type TodayStatus = "done" | "skipped" | "pending";
+
 const LEVELS: RiskLevel[] = ["안전", "위험", "심각"];
 const LEVEL_COLOR: Record<RiskLevel, string> = {
   안전: "var(--safe)",
   위험: "var(--warn)",
   심각: "var(--crit)",
 };
+// gAdmin.tsx와 동일한 정렬 기준 — 심각/위험이 있는 어르신이 위로 오게 해서
+// 여러 어르신을 등록해둔 보호자가 목록에서 바로 확인할 수 있게 한다
+const SEVERITY: Record<RiskLevel, number> = { 심각: 0, 위험: 1, 안전: 2 };
+const TODAY_LABEL: Record<TodayStatus, string> = { done: "오늘 완료", skipped: "오늘 건너뜀", pending: "오늘 아직" };
 
 // 요약 타일 왼쪽의 등급 색 띠 — CSS의 --stat-color로 넘긴다
 const statStyle = (color: string) => ({ "--stat-color": color }) as CSSProperties;
@@ -28,6 +34,7 @@ const statStyle = (color: string) => ({ "--stat-color": color }) as CSSPropertie
 export default function GList() {
   const navigate = useNavigate();
   const [elders, setElders] = useState<ElderRow[]>([]);
+  const [todayStatus, setTodayStatus] = useState<Record<string, TodayStatus>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -42,10 +49,31 @@ export default function GList() {
       .from("elder_profile")
       .select("id,name,relationship,priority_status")
       .order("created_at", { ascending: true })
-      .then(({ data, error }) => {
-        if (error) setError(error.message);
-        else setElders((data ?? []) as ElderRow[]);
+      .then(async ({ data, error }) => {
+        if (error) {
+          setError(error.message);
+          setLoading(false);
+          return;
+        }
+        const rows = (data ?? []) as ElderRow[];
+        setElders(rows);
         setLoading(false);
+
+        // 클릭해서 상세로 들어가지 않아도 오늘 안부 상태를 목록에서 바로 볼 수 있게.
+        // 근거: 실사용 피드백 — "목록에서 한눈에 편하게 볼 수 있으면 좋겠다"
+        const ids = rows.map((r) => r.id);
+        if (ids.length === 0) return;
+        const today = new Date().toISOString().slice(0, 10);
+        const { data: checkins } = await supabase
+          .from("daily_checkin")
+          .select("elder_profile_id,skipped")
+          .eq("date", today)
+          .in("elder_profile_id", ids);
+        const statusMap: Record<string, TodayStatus> = {};
+        for (const c of checkins ?? []) {
+          statusMap[c.elder_profile_id as string] = c.skipped ? "skipped" : "done";
+        }
+        setTodayStatus(statusMap);
       });
     supabase.rpc("is_admin").then(({ data }) => setIsAdmin(Boolean(data)));
   }, []);
@@ -69,6 +97,13 @@ export default function GList() {
   const counts = Object.fromEntries(
     LEVELS.map((level) => [level, elders.filter((e) => e.priority_status === level).length])
   ) as Record<RiskLevel, number>;
+
+  // gAdmin.tsx와 동일하게 심각/위험이 있는 어르신을 목록 위쪽으로 — 어르신이 여러 명이면
+  // 매번 스크롤해서 찾지 않아도 바로 눈에 들어오게 한다
+  const sorted = [...elders].sort((a, b) => {
+    const levelDiff = SEVERITY[a.priority_status] - SEVERITY[b.priority_status];
+    return levelDiff !== 0 ? levelDiff : a.name.localeCompare(b.name);
+  });
 
   return (
     <AppShell
@@ -126,7 +161,9 @@ export default function GList() {
           <div className="g-card-title">
             <span>대상자</span>
           </div>
-          {elders.map((elder) => (
+          {sorted.map((elder) => {
+            const status = todayStatus[elder.id] ?? "pending";
+            return (
             <button
               key={elder.id}
               className="g-list-item"
@@ -135,7 +172,10 @@ export default function GList() {
               <RiskDot level={elder.priority_status} />
               <div className="g-list-body">
                 <div className="g-list-name">{elder.name}</div>
-                <div className="g-list-meta">{elder.relationship}</div>
+                <div className="g-list-meta">
+                  {elder.relationship}
+                  <span className={`g-today-badge g-today-badge--${status}`}>{TODAY_LABEL[status]}</span>
+                </div>
               </div>
               <RiskPill level={elder.priority_status} />
               <span
@@ -160,7 +200,8 @@ export default function GList() {
               </span>
               <span className="g-chev">›</span>
             </button>
-          ))}
+            );
+          })}
         </div>
       )}
 

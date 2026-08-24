@@ -11,7 +11,10 @@ export const SCREEN_ID = "reg";
 // 어르신 등록 — 최초 가입(계정 만들기 3/4)과 "어르신 추가"(1가족:N어르신) 양쪽에서 재사용.
 // elderId가 있으면(=/guardian/elders/:elderId/edit) 등록이 아니라 기존 정보 수정 모드로 동작한다.
 // 근거: 실사용 피드백 — "대상자 목록에서 어르신 정보를 수정할 방법이 없다"
-// 성별 필드는 오픈 이슈(팀 최종 확인 대기)라 이번 패스에서는 노출하지 않는다.
+// 성별은 선택 입력이다(nullable). 위험도 계산에는 쓰지 않는다 — 문헌의 성별 층화 근거가
+// 당뇨는 숫자가 없고 고혈압은 등급 B·이질성 I²=93.2%의 뇌졸중 한정 수치여서, 이것으로
+// 가중치를 나누면 남성 민감도를 낮추게 되어 "애매하면 위험 쪽으로" 원칙과 충돌한다.
+// 근거: Help4/발표 자료/위험도가중치 근거자료.docx §4.1 근거④, §4.2, §7.1
 export default function Reg() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,6 +25,7 @@ export default function Reg() {
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [relationship, setRelationship] = useState("");
+  const [gender, setGender] = useState("");
   const [phone, setPhone] = useState("");
   const [checkinTime, setCheckinTime] = useState("08:00");
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +36,7 @@ export default function Reg() {
     if (!isEdit || !supabaseConfigured) return;
     getSupabase()
       .from("elder_profile")
-      .select("name,birth_date,relationship,phone,checkin_time")
+      .select("name,birth_date,relationship,gender,phone,checkin_time")
       .eq("id", elderId)
       .single()
       .then(({ data, error }) => {
@@ -42,6 +46,7 @@ export default function Reg() {
           setName(data.name ?? "");
           setBirthDate(data.birth_date ?? "");
           setRelationship(data.relationship ?? "");
+          setGender(data.gender ?? "");
           setPhone(data.phone ?? "");
           setCheckinTime(data.checkin_time?.slice(0, 5) ?? "08:00");
         }
@@ -62,6 +67,7 @@ export default function Reg() {
             name,
             birth_date: birthDate,
             relationship,
+            gender: gender || null,
             phone: phone || null,
             checkin_time: checkinTime,
           })
@@ -79,6 +85,7 @@ export default function Reg() {
           name,
           birth_date: birthDate,
           relationship,
+          gender: gender || null,
           phone: phone || null,
           checkin_time: checkinTime,
         })
@@ -113,6 +120,14 @@ export default function Reg() {
         <div className="g-field">
           <label>나와의 관계</label>
           <input value={relationship} onChange={(e) => setRelationship(e.target.value)} placeholder="예: 어머니" required />
+        </div>
+        <div className="g-field">
+          <label>성별 (선택)</label>
+          <select value={gender} onChange={(e) => setGender(e.target.value)}>
+            <option value="">선택하지 않음</option>
+            <option value="female">여성</option>
+            <option value="male">남성</option>
+          </select>
         </div>
         <div className="g-field">
           <label>어르신 전화번호 (전화하기 버튼에 사용)</label>

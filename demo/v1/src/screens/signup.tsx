@@ -77,7 +77,7 @@ export default function Signup() {
             disabled={!supabaseConfigured}
           />
         </div>
-        <a href="/terms" target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "var(--dawn)", display: "inline-block", marginBottom: 10 }}>
+        <a href="/terms" target="_blank" rel="noreferrer" className="g-link" style={{ marginBottom: 10 }}>
           이용약관 및 개인정보 처리 안내 보기
         </a>
         {/* 개인정보보호법 §23·§28-8 대응 — 일반 개인정보 동의와 국외이전(Google Gemini) 동의를
@@ -110,7 +110,7 @@ export default function Signup() {
             </>
           }
         />
-        {error && <p style={{ color: "var(--red)", fontSize: 13 }}>{error}</p>}
+        {error && <p className="g-error">{error}</p>}
         <button className="g-button" type="submit" disabled={loading || !consent || !consentOverseas || !supabaseConfigured}>
           {loading ? "가입 중..." : "다음 — 어르신 정보"}
         </button>

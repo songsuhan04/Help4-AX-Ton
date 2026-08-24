@@ -9,7 +9,7 @@ export default function AuthCallback() {
     <AppShell>
       <h1 className="g-title">처리 중입니다</h1>
       <p className="g-sub">인증이 완료되었습니다. 아래에서 계속하세요.</p>
-      <Link className="g-button" to="/" style={{ display: "block", textAlign: "center", textDecoration: "none" }}>
+      <Link className="g-button" to="/">
         시작 화면으로
       </Link>
     </AppShell>

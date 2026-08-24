@@ -72,11 +72,11 @@ export default function GLetter() {
       <h1 className="g-title">{topic}</h1>
       <p className="g-sub">어르신이 오늘 안부를 남기면 완료 화면에서 이 편지가 열립니다.</p>
       {/* 통신비밀보호법/민법(타인 초상권·음성권) 대응 — 근거: Help4/법적문제 피해가기 공략.pdf §5, 체크리스트 4번 */}
-      <p style={{ fontSize: 13, color: "var(--ink2)", background: "var(--mist)", borderRadius: 10, padding: "10px 12px", marginBottom: 12 }}>
+      <p className="g-note" style={{ marginTop: 0, marginBottom: 12 }}>
         본인의 음성/모습만 녹화해 주세요. 타인의 동의 없는 촬영은 법적 책임을 질 수 있습니다.
       </p>
 
-      <video ref={videoRef} autoPlay muted style={{ width: "100%", borderRadius: 12, background: "#000", aspectRatio: "4/3" }} />
+      <video ref={videoRef} autoPlay muted className="g-media g-media--live" />
 
       {!blob && !recording && (
         <>
@@ -101,7 +101,7 @@ export default function GLetter() {
             <label>한 줄 제목</label>
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={topic} />
           </div>
-          {error && <p style={{ color: "var(--red)", fontSize: 13 }}>{error}</p>}
+          {error && <p className="g-error">{error}</p>}
           <button className="g-button" onClick={send} disabled={sending}>
             {sending ? "전송 중..." : "편지 보내기"}
           </button>

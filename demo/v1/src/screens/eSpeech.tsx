@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
+import { DisplaySettings } from "../components/DisplaySettings";
 import { SpeakButton } from "../components/SpeakButton";
 import { createTestBlob, startRecording, type RecordingHandle } from "../lib/recorder";
 import { uploadToBucket, deleteFromBucket } from "../lib/storage";
@@ -107,19 +108,16 @@ export default function ESpeech() {
 
   return (
     <AppShell variant="elder">
-      <button
-        className="e-secondary"
-        onClick={() => navigate(-1)}
-        style={{ marginBottom: 12, width: "auto", padding: "8px 16px" }}
-      >
+      <button className="e-back" onClick={() => navigate(-1)}>
         ← 이전 화면
       </button>
       <div className="e-topbar">
-        <span>마지막</span>
         <SpeakButton text={topic} />
+        <DisplaySettings />
+        <span className="e-brand">마지막</span>
       </div>
       <h1 className="e-question">{topic}</h1>
-      <p style={{ color: "rgba(255,255,255,0.7)" }}>천천히 말씀하시면 됩니다</p>
+      <p className="e-lead">천천히 말씀하시면 됩니다</p>
       <RecordingNotice />
 
       {!recording && (

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { SpeakButton } from "../components/SpeakButton";
 import { ProgressBar } from "../components/ProgressBar";
-import { FontSizeToggle } from "../components/FontSizeToggle";
+import { DisplaySettings } from "../components/DisplaySettings";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 
@@ -147,21 +147,19 @@ export default function ECheck() {
     navigate("/elder/speech");
   }
 
-  if (loading) return <AppShell variant="elder"><p>오늘의 안부를 준비하고 있어요...</p></AppShell>;
+  if (loading) return <AppShell variant="elder"><p className="e-lead">오늘의 안부를 준비하고 있어요...</p></AppShell>;
   const question = questions[index];
-  if (!question) return <AppShell variant="elder"><p>준비된 질문이 없습니다.</p></AppShell>;
+  if (!question) return <AppShell variant="elder"><p className="e-lead">준비된 질문이 없습니다.</p></AppShell>;
 
   return (
     <AppShell variant="elder">
       <div className="e-topbar">
-        <FontSizeToggle />
-        <span>Callog</span>
+        <DisplaySettings />
+        <span className="e-brand">Callog</span>
       </div>
       <ProgressBar current={index + 1} total={questions.length} />
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <SpeakButton text={question.question} />
-      </div>
       <h1 className="e-question">{question.question}</h1>
+      <SpeakButton text={question.question} />
 
       {question.options.map((option) => (
         <button key={option.text} className="e-choice" onClick={() => answer(option)}>

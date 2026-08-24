@@ -43,8 +43,8 @@ export default function Invite() {
       <h1 className="g-title">어르신께 링크를 보내세요</h1>
       <p className="g-sub">어르신은 이 링크만 한 번 누르면 됩니다.</p>
 
-      {loading && <p>링크 생성 중...</p>}
-      {error && <p style={{ color: "var(--red)", fontSize: 13 }}>{error}</p>}
+      {loading && <p className="g-sub">링크 생성 중...</p>}
+      {error && <p className="g-error">{error}</p>}
 
       {link && (
         <>
@@ -60,7 +60,7 @@ export default function Invite() {
             <label>어르신 전화번호 (문자로 보내기)</label>
             <input value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="010-0000-0000" maxLength={13} />
           </div>
-          <a className="g-button" style={{ display: "block", textAlign: "center", textDecoration: "none" }} href={smsHref}>
+          <a className="g-button" href={smsHref}>
             문자로 보내기
           </a>
 

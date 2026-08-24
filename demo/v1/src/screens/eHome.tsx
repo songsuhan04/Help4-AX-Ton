@@ -2,11 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { SpeakButton } from "../components/SpeakButton";
-import { FontSizeToggle } from "../components/FontSizeToggle";
+import { DisplaySettings } from "../components/DisplaySettings";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { computeStreak } from "../lib/streak";
-import { fs } from "../lib/fontScale";
 
 export const SCREEN_ID = "eHome";
 
@@ -49,19 +48,19 @@ export default function EHome() {
       .then(({ data }) => setStreak(computeStreak((data ?? []).map((r) => r.date as string))));
   }, []);
 
-  if (loading) return <AppShell variant="elder"><p style={{ color: "rgba(255,255,255,0.7)" }}>불러오는 중...</p></AppShell>;
+  if (loading) return <AppShell variant="elder"><p className="e-lead">불러오는 중...</p></AppShell>;
 
   const message = doneToday ? "오늘 안부는 이미 전했어요" : "오늘 안부를 전해볼까요?";
 
   return (
     <AppShell variant="elder">
       <div className="e-topbar">
-        <FontSizeToggle />
-        <span>Callog</span>
+        <DisplaySettings />
+        <span className="e-brand">Callog</span>
       </div>
-      <div style={{ textAlign: "center", padding: "24px 0" }}>
-        <h1 className="e-question" style={{ fontSize: fs(24) }}>{message}</h1>
-        {streak > 0 && <p style={{ color: "rgba(255,255,255,0.6)" }}>{streak}일 연속 참여 중이에요</p>}
+      <div className="e-hero">
+        <h1 className="e-question">{message}</h1>
+        {streak > 0 && <p className="e-meta">{streak}일 연속 참여 중이에요</p>}
       </div>
 
       <SpeakButton text={message} />

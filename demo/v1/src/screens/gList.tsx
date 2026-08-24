@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
-import { RiskDot } from "../components/RiskDot";
+import { RiskDot, RiskPill } from "../components/RiskDot";
 import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import type { RiskLevel } from "../config/riskConstants";
@@ -14,6 +14,16 @@ interface ElderRow {
   relationship: string;
   priority_status: RiskLevel;
 }
+
+const LEVELS: RiskLevel[] = ["안전", "위험", "심각"];
+const LEVEL_COLOR: Record<RiskLevel, string> = {
+  안전: "var(--safe)",
+  위험: "var(--warn)",
+  심각: "var(--crit)",
+};
+
+// 요약 타일 왼쪽의 등급 색 띠 — CSS의 --stat-color로 넘긴다
+const statStyle = (color: string) => ({ "--stat-color": color }) as CSSProperties;
 
 export default function GList() {
   const navigate = useNavigate();
@@ -55,63 +65,104 @@ export default function GList() {
     setElders((prev) => prev.filter((e) => e.id !== elder.id));
   }
 
-  return (
-    <AppShell>
-      <div className="g-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span>Callog(콜록)</span>
-        <div style={{ display: "flex", gap: 8 }}>
-          {isAdmin && (
-            <button className="g-back" onClick={() => navigate("/admin")}>
-              관리자 대시보드
-            </button>
-          )}
-          <button className="g-back" onClick={logout}>
-            로그아웃
-          </button>
-        </div>
-      </div>
-      <h1 className="g-title">대상자 목록</h1>
+  // 목록을 세지 않고도 오늘 상태가 한눈에 보이도록 위쪽에 등급별 인원을 먼저 놓는다
+  const counts = Object.fromEntries(
+    LEVELS.map((level) => [level, elders.filter((e) => e.priority_status === level).length])
+  ) as Record<RiskLevel, number>;
 
-      {loading && <p>불러오는 중...</p>}
-      {error && <p style={{ color: "var(--red)", fontSize: 13 }}>{error}</p>}
+  return (
+    <AppShell
+      aside={
+        <>
+          <div className="g-brand">Callog(콜록)</div>
+          <div className="g-aside-actions">
+            {isAdmin && (
+              <button className="g-back" onClick={() => navigate("/admin")}>
+                관리자 대시보드
+              </button>
+            )}
+            <button className="g-back" onClick={logout}>
+              로그아웃
+            </button>
+          </div>
+          <div className="g-aside-foot">
+            본 서비스는 의료기기가 아니며, 표시되는 위험도는 참고용 신호입니다.
+          </div>
+        </>
+      }
+    >
+      <div className="g-toolbar">
+        <div>
+          <h1 className="g-title">대상자 목록</h1>
+          <p className="g-sub">등록된 어르신 {elders.length}명의 오늘 상태입니다.</p>
+        </div>
+        <button className="g-button" onClick={() => navigate("/guardian/elders/new")}>
+          어르신 추가
+        </button>
+      </div>
+
+      {elders.length > 0 && (
+        <div className="g-stats">
+          {LEVELS.map((level) => (
+            <div key={level} className="g-stat" style={statStyle(LEVEL_COLOR[level])}>
+              <div className="g-stat-label">{level}</div>
+              <div className="g-stat-value">
+                {counts[level]}
+                <small>명</small>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {error && <p className="g-error">{error}</p>}
+      {loading && <p className="g-sub">불러오는 중...</p>}
       {!loading && elders.length === 0 && !error && (
         <p className="g-sub">등록된 어르신이 없습니다. 어르신을 추가해보세요.</p>
       )}
 
-      {elders.map((elder) => (
-        <button key={elder.id} className="g-list-item" onClick={() => navigate(`/guardian/elders/${elder.id}`)}>
-          <RiskDot level={elder.priority_status} />
-          <div style={{ flex: 1 }}>
-            <div className="g-list-name">{elder.name}</div>
-            <div className="g-list-meta">{elder.relationship}</div>
+      {elders.length > 0 && (
+        <div className="g-card">
+          <div className="g-card-title">
+            <span>대상자</span>
           </div>
-          <span
-            role="button"
-            style={{ color: "var(--ink3)", fontSize: 13, padding: "4px 8px" }}
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/guardian/elders/${elder.id}/edit`);
-            }}
-          >
-            수정
-          </span>
-          <span
-            role="button"
-            style={{ color: "var(--red)", fontSize: 13, padding: "4px 8px" }}
-            onClick={(e) => {
-              e.stopPropagation();
-              deleteElder(elder);
-            }}
-          >
-            삭제
-          </span>
-          <span style={{ color: "var(--ink3)" }}>›</span>
-        </button>
-      ))}
-
-      <button className="g-button" style={{ marginTop: 20 }} onClick={() => navigate("/guardian/elders/new")}>
-        어르신 추가
-      </button>
+          {elders.map((elder) => (
+            <button
+              key={elder.id}
+              className="g-list-item"
+              onClick={() => navigate(`/guardian/elders/${elder.id}`)}
+            >
+              <RiskDot level={elder.priority_status} />
+              <div className="g-list-body">
+                <div className="g-list-name">{elder.name}</div>
+                <div className="g-list-meta">{elder.relationship}</div>
+              </div>
+              <RiskPill level={elder.priority_status} />
+              <span
+                role="button"
+                className="g-rowaction"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/guardian/elders/${elder.id}/edit`);
+                }}
+              >
+                수정
+              </span>
+              <span
+                role="button"
+                className="g-rowaction g-rowaction--danger"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteElder(elder);
+                }}
+              >
+                삭제
+              </span>
+              <span className="g-chev">›</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <MedicalDisclaimer />
     </AppShell>

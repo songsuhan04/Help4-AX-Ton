@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sendPushForElder } from "./sendPush";
 
 // 위험도 실제 산정 로직 — docs/기능설계서.md §3의 잠정 규칙을 점수화한 것.
 // demo/v1/src/config/riskConstants.ts에도 동일한 값을 문서용으로 미러링해두었다(수동 동기화).
@@ -124,6 +125,16 @@ export async function assessRisk(admin: SupabaseClient, elderProfileId: string, 
   const level = score >= LEVEL_THRESHOLD.심각 ? "심각" : score >= LEVEL_THRESHOLD.위험 ? "위험" : "안전";
   const reason = reasons.length ? reasons.join(" / ") : "특별한 위험 신호가 없습니다";
 
+  // 알림 중복 방지 — assessRisk는 안부 완료 시점과 음성 분석 완료 시점 두 번 실행되므로
+  // 직전 등급을 먼저 읽어두고, 등급이 실제로 나빠졌을 때만 푸시를 보낸다.
+  const { data: before } = await admin
+    .from("risk_assessment")
+    .select("level")
+    .eq("elder_profile_id", elderProfileId)
+    .eq("date", date)
+    .maybeSingle();
+  const previousLevel = (before?.level as string | undefined) ?? null;
+
   const { error: upsertErr } = await admin.from("risk_assessment").upsert(
     {
       elder_profile_id: elderProfileId,
@@ -141,4 +152,22 @@ export async function assessRisk(admin: SupabaseClient, elderProfileId: string, 
     .update({ priority_status: level })
     .eq("id", elderProfileId);
   if (updateErr) console.error("assessRisk: elder_profile update failed", updateErr);
+
+  // 위험/심각으로 새로 올라갔을 때만 보호자에게 알린다. 같은 등급이 유지되는 동안은
+  // 다시 보내지 않아 하루에 같은 알림이 반복되지 않는다.
+  const worsened = level !== "안전" && level !== previousLevel;
+  if (worsened) {
+    const { data: elder } = await admin
+      .from("elder_profile")
+      .select("name")
+      .eq("id", elderProfileId)
+      .maybeSingle();
+    const name = (elder?.name as string | undefined) ?? "어르신";
+    await sendPushForElder(admin, elderProfileId, {
+      title: `${name}님 — 확인이 필요합니다`,
+      body: reason,
+      url: `/guardian/elders/${elderProfileId}`,
+      tag: `risk-${elderProfileId}-${date}`,
+    });
+  }
 }

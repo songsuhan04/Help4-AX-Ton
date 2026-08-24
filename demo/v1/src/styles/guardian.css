@@ -865,3 +865,21 @@
   padding: 7px 14px;
   font-size: calc(13px * var(--font-scale));
 }
+
+/* 위험 알림 켜기/끄기 — 사이드바에 놓는다 */
+.g-push {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.g-push-hint {
+  font-size: calc(11.5px * var(--font-scale));
+  line-height: 1.5;
+  color: var(--text-3);
+  margin: 0;
+}
+
+.g-push-hint--error {
+  color: var(--crit-fg);
+}

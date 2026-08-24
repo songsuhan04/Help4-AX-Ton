@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
+import { sendPushForElder } from "../lib/sendPush";
 
 // 기능설계서.md §3/§6 오픈 이슈 — "안부 시각으로부터 7시간 넘게 무응답이면 위험 신호로 본다".
 // 근거: Help4/발표 자료/위험도가중치 근거자료.docx 및 팀 논의.
@@ -56,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const now = seoulNow();
   const today = todaySeoul();
 
-  const { data: elders, error } = await admin.from("elder_profile").select("id,checkin_time");
+  const { data: elders, error } = await admin.from("elder_profile").select("id,name,checkin_time");
   if (error) {
     res.status(500).json({ status: "failed", error: error.message });
     return;
@@ -97,6 +98,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       { onConflict: "elder_profile_id,date" }
     );
     await admin.from("elder_profile").update({ priority_status: "위험" }).eq("id", elder.id);
+
+    // 무응답은 앱을 열지 않았다는 뜻이므로, 알림이 없으면 보호자가 알 방법이 사실상 없다
+    await sendPushForElder(admin, elder.id as string, {
+      title: `${(elder.name as string) ?? "어르신"}님 — 응답이 없습니다`,
+      body: `안부 시각(${(elder.checkin_time as string).slice(0, 5)})으로부터 ${NO_RESPONSE_ALERT_HOURS}시간 넘게 응답이 없어요. 확인이 필요합니다`,
+      url: `/guardian/elders/${elder.id}`,
+      tag: `noresp-${elder.id}-${today}`,
+    });
     flagged++;
   }
 

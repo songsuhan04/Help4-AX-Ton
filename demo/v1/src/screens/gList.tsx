@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { RiskDot, RiskPill } from "../components/RiskDot";
 import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
+import { PushToggle } from "../components/PushToggle";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import type { RiskLevel } from "../config/riskConstants";
 import { todaySeoul } from "../lib/date";
@@ -120,6 +121,7 @@ export default function GList() {
             <button className="g-back" onClick={logout}>
               로그아웃
             </button>
+            <PushToggle />
           </div>
           <div className="g-aside-foot">
             본 서비스는 의료기기가 아니며, 표시되는 위험도는 참고용 신호입니다.

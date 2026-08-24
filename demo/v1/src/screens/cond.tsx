@@ -60,7 +60,7 @@ export default function Cond() {
 
       {CONDITION_CATEGORIES.map((category) => (
         <div key={category} style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 13, color: "var(--ink3)", marginBottom: 8 }}>{category}</div>
+          <div className="g-header">{category}</div>
           {getConditionsByCategory(category).map((c) => (
             <Chip key={c.id} label={c.label} selected={selected.includes(c.id)} onClick={() => toggle(c.id)} />
           ))}
@@ -72,15 +72,17 @@ export default function Cond() {
         <input value={customText} onChange={(e) => setCustomText(e.target.value)} placeholder="예: 갑상선 질환" />
       </div>
 
-      <div style={{ background: "var(--mist)", borderRadius: 12, padding: 16, marginBottom: 16 }}>
-        <div style={{ fontSize: 13, color: "var(--ink2)", marginBottom: 8 }}>오늘 어르신께 물을 질문 {preview.length}개</div>
-        <ol style={{ margin: 0, paddingLeft: 20, fontSize: 14 }}>
+      <div className="g-card" style={{ marginBottom: 16 }}>
+        <div className="g-card-title">
+          <span>오늘 어르신께 물을 질문 {preview.length}개</span>
+        </div>
+        <ol className="g-questions">
           {preview.map((q, i) => (
             <li key={i}>{q}</li>
           ))}
         </ol>
         {riskNotes.length > 0 && (
-          <div style={{ marginTop: 12, fontSize: 13, color: "var(--ink2)" }}>
+          <div className="g-note">
             {riskNotes.map((c) => (
               <div key={c.id}>· {c.label} — {c.riskNote}</div>
             ))}
@@ -106,7 +108,7 @@ export default function Cond() {
         }
       />
 
-      {error && <p style={{ color: "var(--red)", fontSize: 13 }}>{error}</p>}
+      {error && <p className="g-error">{error}</p>}
       <button className="g-button" onClick={handleSubmit} disabled={loading || (hasHealthData && !consentHealth) || !supabaseConfigured}>
         {loading ? "저장 중..." : "저장하고 초대하기"}
       </button>

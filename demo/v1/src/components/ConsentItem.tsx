@@ -12,25 +12,17 @@ interface ConsentItemProps {
 export function ConsentItem({ checked, onChange, label, detail }: ConsentItemProps) {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-        <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "var(--ink2)", flex: 1 }}>
-          <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} required style={{ marginTop: 2 }} />
+    <div className="g-consent">
+      <div className="g-consent-row">
+        <label className="g-check">
+          <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} required />
           <span>{label}</span>
         </label>
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          style={{ fontSize: 12, color: "var(--dawn)", background: "none", border: "none", padding: 0, textDecoration: "underline", whiteSpace: "nowrap" }}
-        >
+        <button type="button" className="g-consent-toggle" onClick={() => setOpen((o) => !o)}>
           {open ? "접기" : "자세히"}
         </button>
       </div>
-      {open && (
-        <div style={{ fontSize: 12, color: "var(--ink3)", background: "var(--mist)", borderRadius: 8, padding: "10px 12px", marginTop: 6, marginLeft: 24, lineHeight: 1.7 }}>
-          {detail}
-        </div>
-      )}
+      {open && <div className="g-consent-detail">{detail}</div>}
     </div>
   );
 }

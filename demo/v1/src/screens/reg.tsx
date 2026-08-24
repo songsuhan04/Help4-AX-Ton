@@ -128,7 +128,7 @@ export default function Reg() {
           <label>안부 묻는 시각</label>
           <input type="time" value={checkinTime} onChange={(e) => setCheckinTime(e.target.value)} required />
         </div>
-        {error && <p style={{ color: "var(--red)", fontSize: 13 }}>{error}</p>}
+        {error && <p className="g-error">{error}</p>}
         <button className="g-button" type="submit" disabled={loading || !supabaseConfigured}>
           {loading ? "저장 중..." : isEdit ? "수정 완료" : "다음 — 지병 확인"}
         </button>

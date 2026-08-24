@@ -1,20 +1,471 @@
+/* 보호자 화면
+ *
+ * 어르신 화면과 반대로, 여기는 여러 명의 상태를 한눈에 비교하는 관제판이다.
+ * 좁은 띠 안에 가두면 위험도·추이·영상편지가 세로로 끝없이 밀려 스크롤해야 겨우 비교되므로,
+ * 넓은 화면에서는 왼쪽 사이드바 + 오른쪽 본문으로 펴고 카드를 2단으로 나눈다.
+ *
+ * 폼 화면(가입·어르신 등록·지병 선택)은 예외다. 입력 폼은 넓힐수록 읽기 어려워지므로
+ * 지금처럼 가운데 좁은 카드(.app-card)를 그대로 쓴다.
+ */
+
+/* ===== 대시보드 레이아웃 ===== */
+
+.g-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  /* 좁은 화면에서 사이드바는 위쪽 띠가 된다. auto를 주지 않으면 100vh를 두 행이
+     나눠 가져서 띠 하나가 화면 절반을 차지한다. */
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  min-height: 100vh;
+}
+
+@media (min-width: 1024px) {
+  .g-layout {
+    grid-template-columns: 232px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+}
+
+.g-aside {
+  background: #0b0d10;
+  border-bottom: 1px solid var(--line);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 1024px) {
+  .g-aside {
+    border-bottom: none;
+    border-right: 1px solid var(--line);
+    flex-direction: column;
+    align-items: stretch;
+    padding: 24px 16px;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+}
+
+.g-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex: 1;
+}
+
+@media (min-width: 1024px) {
+  .g-brand {
+    flex: none;
+    padding: 0 8px 14px;
+  }
+}
+
+.g-brand::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  background: var(--primary);
+  flex: none;
+}
+
+.g-aside-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 1024px) {
+  .g-aside-actions {
+    flex-direction: column;
+  }
+}
+
+.g-aside-foot {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .g-aside-foot {
+    display: block;
+    margin-top: auto;
+    padding: 0 8px;
+    font-size: 11.5px;
+    line-height: 1.55;
+    color: var(--text-3);
+  }
+}
+
+.g-main {
+  padding: 22px 18px 64px;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .g-main {
+    padding: 30px 32px 72px;
+  }
+}
+
+.g-main-inner {
+  max-width: 1080px;
+}
+
+.g-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.g-toolbar .g-button {
+  width: auto;
+  margin-top: 0;
+  flex: none;
+}
+
+/* ===== 글 ===== */
+
 .g-header {
-  font-size: 13px;
-  color: var(--ink3);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .g-title {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0 0 8px;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  margin: 0 0 6px;
+  text-wrap: balance;
+}
+
+.g-title small {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-3);
+  margin-left: 6px;
 }
 
 .g-sub {
   font-size: 14px;
-  color: var(--ink2);
-  margin: 0 0 20px;
+  color: var(--text-2);
+  margin: 0 0 18px;
+  line-height: 1.6;
 }
+
+.g-error {
+  font-size: 13.5px;
+  color: var(--crit-fg);
+  background: var(--crit-bg);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  margin: 10px 0;
+}
+
+.g-legal {
+  font-size: 12px;
+  color: var(--text-3);
+  line-height: 1.65;
+  margin-top: 28px;
+}
+
+.g-link {
+  font-size: 13px;
+  color: var(--primary-hi);
+  display: inline-block;
+}
+
+.g-link--block {
+  display: block;
+  text-align: center;
+  margin-top: 24px;
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+/* ===== 요약 타일 =====
+ * 숫자만 보고 지나치지 않도록 왼쪽에 등급 색 띠를 세운다. */
+
+.g-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.g-stat {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 13px 15px;
+}
+
+.g-stat::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--stat-color, var(--text-3));
+}
+
+.g-stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.g-stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.g-stat-value small {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+  margin-left: 3px;
+  letter-spacing: 0;
+}
+
+/* ===== 카드 ===== */
+
+.g-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 16px 18px;
+}
+
+.g-card + .g-card {
+  margin-top: 14px;
+}
+
+.g-card-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.g-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .g-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.g-grid > .g-card + .g-card {
+  margin-top: 0;
+}
+
+.g-section {
+  margin-top: 22px;
+}
+
+/* ===== 목록 ===== */
+
+.g-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 0;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: inherit;
+  text-align: left;
+}
+
+.g-list-item:last-child {
+  border-bottom: none;
+  padding-bottom: 2px;
+}
+
+.g-list-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.g-list-name {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.g-list-name small {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+  margin-left: 5px;
+}
+
+.g-list-meta {
+  font-size: 12.5px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+
+.g-chev {
+  color: var(--text-3);
+  font-size: 17px;
+  flex: none;
+}
+
+.g-rowaction {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-3);
+  padding: 4px 8px;
+  border-radius: 6px;
+  flex: none;
+}
+
+.g-rowaction--danger {
+  color: var(--crit-fg);
+}
+
+/* 위험도 배지 — 색만으로 구분하지 않도록 글자도 함께 넣는다 */
+.g-pill {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding: 3px 9px;
+  border-radius: 6px;
+  flex: none;
+}
+
+.g-pill--안전 {
+  background: var(--safe-bg);
+  color: var(--safe-fg);
+}
+
+.g-pill--위험 {
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+}
+
+.g-pill--심각 {
+  background: var(--crit-bg);
+  color: var(--crit-fg);
+}
+
+/* ===== 버튼 ===== */
+
+.g-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  font-size: 14.5px;
+  font-weight: 700;
+  background: var(--primary);
+  color: var(--primary-ink);
+  margin-top: 8px;
+  text-decoration: none;
+}
+
+.g-button:disabled {
+  opacity: 0.45;
+}
+
+.g-button--secondary {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--line);
+}
+
+.g-button--danger {
+  background: transparent;
+  color: var(--crit-fg);
+  border-color: var(--crit-bg);
+}
+
+.g-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.g-actions > * {
+  flex: 1 1 140px;
+}
+
+.g-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  margin-bottom: 14px;
+}
+
+.g-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 8px 8px 0;
+}
+
+.g-chip--selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+}
+
+/* ===== 입력 ===== */
 
 .g-field {
   margin-bottom: 16px;
@@ -23,7 +474,8 @@
 .g-field label {
   display: block;
   font-size: 13px;
-  color: var(--ink2);
+  font-weight: 600;
+  color: var(--text-2);
   margin-bottom: 6px;
 }
 
@@ -32,92 +484,184 @@
   width: 100%;
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--r-sm);
+  font-family: inherit;
   font-size: 15px;
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--surface-2);
+  color: var(--text);
 }
 
-.g-button {
-  width: 100%;
-  padding: 14px;
-  border-radius: 12px;
-  border: none;
-  font-size: 15px;
-  font-weight: 600;
-  background: var(--dawn);
-  color: #fff;
-  margin-top: 4px;
+.g-field input::placeholder {
+  color: var(--text-3);
 }
 
-.g-button:disabled {
+.g-field input:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
 }
 
-.g-button--secondary {
-  background: var(--paper);
-  color: var(--ink);
-  border: 1px solid var(--line);
+/* 날짜·시각 입력의 기본 아이콘은 밝은 배경 기준이라 어두운 바탕에서 안 보인다 */
+.g-field input[type="date"]::-webkit-calendar-picker-indicator,
+.g-field input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.55;
 }
 
-.g-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--paper);
-  font-size: 14px;
-  margin: 0 8px 8px 0;
-}
-
-.g-chip--selected {
-  background: var(--dawn);
-  color: #fff;
-  border-color: var(--dawn);
-}
-
-.g-list-item {
+.g-check {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--line);
-  text-align: left;
-  width: 100%;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.55;
+}
+
+.g-check input {
+  margin-top: 3px;
+  accent-color: var(--primary);
+  flex: none;
+}
+
+/* ===== 동의 항목 ===== */
+
+.g-consent {
+  margin-bottom: 12px;
+}
+
+.g-consent-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.g-consent-row .g-check {
+  flex: 1;
+}
+
+.g-consent-toggle {
+  font-size: 12px;
+  color: var(--primary-hi);
   background: none;
-  border-left: none;
-  border-right: none;
-  border-top: none;
+  border: none;
+  padding: 0;
+  text-decoration: underline;
+  white-space: nowrap;
+  flex: none;
 }
 
-.g-list-item:last-child {
-  border-bottom: none;
+.g-consent-detail {
+  font-size: 12px;
+  color: var(--text-2);
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  margin: 6px 0 0 24px;
+  line-height: 1.7;
 }
 
-.g-list-name {
+/* ===== 소견 · 안내 ===== */
+
+.g-note {
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  padding: 11px 13px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-2);
+  margin-top: 12px;
+}
+
+.g-note b {
+  color: var(--text);
   font-weight: 700;
 }
 
-.g-list-meta {
-  font-size: 13px;
-  color: var(--ink3);
+.g-note-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--primary-hi);
+  margin-bottom: 4px;
 }
 
-.g-list-status {
-  font-size: 13px;
-  margin-top: 2px;
+.g-timestamp {
+  font-size: 12.5px;
+  color: var(--text-3);
+  margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
 }
 
-.g-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: none;
-  border: none;
-  color: var(--ink2);
-  font-size: 14px;
-  padding: 8px 0;
+/* ===== 미디어 ===== */
+
+.g-media {
+  width: 100%;
+  border-radius: var(--r-sm);
+  background: #000;
+  display: block;
+}
+
+.g-media--live {
+  aspect-ratio: 4 / 3;
+}
+
+.g-letter {
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.g-letter-title {
   margin-bottom: 8px;
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.g-letter .g-media {
+  margin-bottom: 8px;
+}
+
+/* ===== 추이 차트 ===== */
+
+.g-trend {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.g-questions {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* ===== 약관 본문 ===== */
+
+.g-terms-section {
+  margin-bottom: 22px;
+}
+
+.g-terms-heading {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 6px;
+}
+
+.g-terms-section p {
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--text-2);
+  margin: 0 0 8px;
+}
+
+/* 영상편지 안의 삭제는 되돌릴 수 없는 동작이라 눈에 띄어야 하지만, 카드 폭을 다 차지할
+   만큼 중요한 동작은 아니다. 오른쪽에 작게 붙인다. */
+.g-letter .g-button--danger {
+  width: auto;
+  margin-left: auto;
+  padding: 7px 14px;
+  font-size: 13px;
 }

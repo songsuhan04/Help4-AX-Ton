@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
-import { RiskDot } from "../components/RiskDot";
+import { RiskPill } from "../components/RiskDot";
 import { TrendChart, type TrendPoint } from "../components/TrendChart";
 import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
@@ -189,112 +189,140 @@ export default function GDetail() {
     setter((prev) => prev.filter((l) => l.id !== letter.id));
   }
 
-  if (!elder) return <AppShell>{error ? <p style={{ color: "var(--red)" }}>{error}</p> : <p>불러오는 중...</p>}</AppShell>;
+  if (!elder) return <AppShell>{error ? <p className="g-error">{error}</p> : <p className="g-sub">불러오는 중...</p>}</AppShell>;
 
   return (
-    <AppShell>
-      <BackButton to="/guardian" />
-      <div className="g-header" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <RiskDot level={elder.priority_status} /> {elder.priority_status}
+    <AppShell
+      aside={
+        <>
+          <div className="g-brand">Callog(콜록)</div>
+          <div className="g-aside-actions">
+            <BackButton to="/guardian" />
+          </div>
+          <div className="g-aside-foot">
+            본 서비스는 의료기기가 아니며, 표시되는 위험도는 참고용 신호입니다.
+          </div>
+        </>
+      }
+    >
+      <div className="g-toolbar">
+        <div>
+          <div className="g-header">
+            <RiskPill level={elder.priority_status} />
+          </div>
+          <h1 className="g-title">
+            {elder.name}
+            <small>{elder.relationship}</small>
+          </h1>
+          <p className="g-sub">
+            {streak > 0 && `${streak}일 연속 안부를 남기고 있어요. `}
+            {risk ? risk.reason : "특별한 위험 신호가 없습니다."}
+          </p>
+        </div>
       </div>
-      <h1 className="g-title">{elder.name} <span style={{ fontSize: 14, color: "var(--ink3)" }}>{elder.relationship}</span></h1>
 
-      {streak > 0 && <p className="g-sub">{streak}일 연속 안부를 남기고 있어요</p>}
-      {risk ? <p className="g-sub">{risk.reason}</p> : <p className="g-sub">특별한 위험 신호가 없습니다.</p>}
-
-      <div style={{ display: "flex", gap: 8 }}>
+      <div className="g-actions">
         {elder.phone ? (
-          <a
-            className="g-button"
-            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
-            href={`tel:${elder.phone}`}
-          >
+          <a className="g-button" href={`tel:${elder.phone}`}>
             전화하기
           </a>
         ) : (
-          <button className="g-button" disabled style={{ flex: 1 }} title="등록된 전화번호가 없습니다">
+          <button className="g-button" disabled title="등록된 전화번호가 없습니다">
             전화하기
           </button>
         )}
-        <button className="g-button g-button--secondary" disabled={busy || !risk} onClick={markChecked} style={{ flex: 1 }}>
+        <button className="g-button g-button--secondary" disabled={busy || !risk} onClick={markChecked}>
           확인했어요
         </button>
+        <button
+          className="g-button g-button--secondary"
+          onClick={() => navigate(`/guardian/elders/${elderId}/letter`)}
+        >
+          영상편지 보내기
+        </button>
+        <button className="g-button g-button--secondary" onClick={reinvite} disabled={busy}>
+          재초대 (기기 변경 시)
+        </button>
       </div>
+      {error && <p className="g-error">{error}</p>}
 
-      <button className="g-button g-button--secondary" style={{ marginTop: 16 }} onClick={() => navigate(`/guardian/elders/${elderId}/letter`)}>
-        영상편지 보내기
-      </button>
-      <button className="g-button g-button--secondary" onClick={reinvite} disabled={busy}>
-        재초대 (기기 변경 시)
-      </button>
-      {error && <p style={{ color: "var(--red)", fontSize: 13 }}>{error}</p>}
-
-      {trend.some((p) => p.level) && (
-        <div style={{ marginTop: 24 }}>
-          <div className="g-header">최근 {TREND_DAYS}일 추이</div>
-          <TrendChart points={trend} />
-        </div>
-      )}
-
-      {voice?.signedUrl && (
-        <div style={{ marginTop: 24 }}>
-          <div className="g-header">최근 말하기 안부</div>
-          <div style={{ fontSize: 13, color: "var(--ink3)", marginBottom: 6 }}>
-            {new Date(voice.created_at).toLocaleString("ko-KR")}
-          </div>
-          <audio src={voice.signedUrl} controls style={{ width: "100%" }} />
-          {voice.analysis_status === "failed" && (
-            <p style={{ color: "var(--red)", fontSize: 13, marginTop: 8 }}>음성 분석에 실패했습니다. 직접 들어보고 확인해주세요.</p>
-          )}
-          {voice.analysis_status === "ok" && (voice.transcript || voice.observations) && (
-            <div style={{ background: "var(--mist)", borderRadius: 12, padding: 12, marginTop: 8, fontSize: 14 }}>
-              {voice.transcript && (
-                <div style={{ marginBottom: voice.observations ? 6 : 0 }}>
-                  <span style={{ color: "var(--ink3)" }}>말씀 내용: </span>{voice.transcript}
-                </div>
-              )}
-              {voice.observations && (
-                <div>
-                  <span style={{ color: "var(--ink3)" }}>AI 소견: </span>{voice.observations}
-                </div>
-              )}
+      {/* 넓은 화면에서는 추이·음성과 영상편지를 2단으로 나눠, 스크롤하지 않고 함께 본다 */}
+      <div className="g-grid g-section">
+        <div>
+          {trend.some((p) => p.level) && (
+            <div className="g-card">
+              <div className="g-card-title">
+                <span>최근 {TREND_DAYS}일 추이</span>
+              </div>
+              <TrendChart points={trend} />
             </div>
           )}
+
+          {voice?.signedUrl && (
+            <div className="g-card">
+              <div className="g-card-title">
+                <span>최근 말하기 안부</span>
+              </div>
+              <div className="g-timestamp">{new Date(voice.created_at).toLocaleString("ko-KR")}</div>
+              <audio src={voice.signedUrl} controls style={{ width: "100%" }} />
+              {voice.analysis_status === "failed" && (
+                <p className="g-error">음성 분석에 실패했습니다. 직접 들어보고 확인해주세요.</p>
+              )}
+              {voice.analysis_status === "ok" && (voice.transcript || voice.observations) && (
+                <div className="g-note">
+                  {voice.transcript && (
+                    <div>
+                      <span className="g-note-label">말씀 내용</span>
+                      {voice.transcript}
+                    </div>
+                  )}
+                  {voice.observations && (
+                    <div style={{ marginTop: voice.transcript ? 10 : 0 }}>
+                      <span className="g-note-label">AI 소견</span>
+                      {voice.observations}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      )}
 
-      <div style={{ marginTop: 24 }}>
-        <div className="g-header">{elder.name}님이 보낸 영상편지</div>
-        {letters.length === 0 && <p className="g-sub">아직 받은 영상편지가 없습니다.</p>}
-        {letters.map((letter) => (
-          <div key={letter.id} style={{ background: "var(--mist)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
-            <div style={{ fontSize: 13, color: "var(--ink3)", marginBottom: 6 }}>
-              {new Date(letter.sent_at).toLocaleString("ko-KR")}
+        <div>
+          <div className="g-card">
+            <div className="g-card-title">
+              <span>{elder.name}님이 보낸 영상편지</span>
             </div>
-            <div style={{ marginBottom: 8 }}>{letter.title}</div>
-            {letter.signedUrl && <video src={letter.signedUrl} controls style={{ width: "100%", borderRadius: 8, marginBottom: 8 }} />}
-            <button className="g-button g-button--secondary" onClick={() => deleteLetter(letter, "elder")}>
-              삭제
-            </button>
+            {letters.length === 0 && <p className="g-sub" style={{ margin: 0 }}>아직 받은 영상편지가 없습니다.</p>}
+            {letters.map((letter) => (
+              <div key={letter.id} className="g-letter">
+                <div className="g-timestamp">{new Date(letter.sent_at).toLocaleString("ko-KR")}</div>
+                <div className="g-letter-title">{letter.title}</div>
+                {letter.signedUrl && <video src={letter.signedUrl} controls className="g-media" />}
+                <button className="g-button g-button--danger" onClick={() => deleteLetter(letter, "elder")}>
+                  삭제
+                </button>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      <div style={{ marginTop: 24 }}>
-        <div className="g-header">내가 보낸 영상편지</div>
-        {myLetters.length === 0 && <p className="g-sub">아직 보낸 영상편지가 없습니다.</p>}
-        {myLetters.map((letter) => (
-          <div key={letter.id} style={{ background: "var(--mist)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
-            <div style={{ fontSize: 13, color: "var(--ink3)", marginBottom: 6 }}>
-              {new Date(letter.sent_at).toLocaleString("ko-KR")}
+          <div className="g-card">
+            <div className="g-card-title">
+              <span>내가 보낸 영상편지</span>
             </div>
-            <div style={{ marginBottom: 8 }}>{letter.title}</div>
-            {letter.signedUrl && <video src={letter.signedUrl} controls style={{ width: "100%", borderRadius: 8, marginBottom: 8 }} />}
-            <button className="g-button g-button--secondary" onClick={() => deleteLetter(letter, "family")}>
-              삭제
-            </button>
+            {myLetters.length === 0 && <p className="g-sub" style={{ margin: 0 }}>아직 보낸 영상편지가 없습니다.</p>}
+            {myLetters.map((letter) => (
+              <div key={letter.id} className="g-letter">
+                <div className="g-timestamp">{new Date(letter.sent_at).toLocaleString("ko-KR")}</div>
+                <div className="g-letter-title">{letter.title}</div>
+                {letter.signedUrl && <video src={letter.signedUrl} controls className="g-media" />}
+                <button className="g-button g-button--danger" onClick={() => deleteLetter(letter, "family")}>
+                  삭제
+                </button>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
 
       <MedicalDisclaimer />

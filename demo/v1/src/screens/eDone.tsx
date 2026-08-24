@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
+import { DisplaySettings } from "../components/DisplaySettings";
 import { SpeakButton } from "../components/SpeakButton";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSignedUrl } from "../lib/storage";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { computeStreak } from "../lib/streak";
-import { fs } from "../lib/fontScale";
 
 export const SCREEN_ID = "eDone";
 
@@ -59,25 +59,26 @@ export default function EDone() {
   return (
     <AppShell variant="elder">
       <div className="e-topbar">
-        <span>Callog</span>
+        <DisplaySettings />
+        <span className="e-brand">Callog</span>
       </div>
-      <div style={{ textAlign: "center", padding: "24px 0" }}>
-        <div style={{ fontSize: fs(40) }}>✓</div>
-        <h1 style={{ fontSize: fs(26) }}>잘 하셨어요</h1>
-        <p style={{ color: "rgba(255,255,255,0.75)" }}>오늘 안부를 가족에게 전했어요.</p>
+      <div className="e-hero">
+        <div className="e-hero-mark">✓</div>
+        <h1 className="e-question">잘 하셨어요</h1>
+        <p className="e-lead">오늘 안부를 가족에게 전했어요.</p>
         <div className="e-streak">
           {dots.map((filled, i) => (
             <span key={i} className={filled ? "e-streak-dot e-streak-dot--filled" : "e-streak-dot"} />
           ))}
         </div>
-        <p style={{ color: "rgba(255,255,255,0.6)", fontSize: fs(13) }}>{streak}일 연속 안부를 남기셨어요</p>
+        <p className="e-meta">{streak}일 연속 안부를 남기셨어요</p>
       </div>
 
       {letter && (
-        <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 12, padding: 16, marginBottom: 12 }}>
-          <div style={{ fontSize: fs(13), color: "rgba(255,255,255,0.6)" }}>가족이 보냈어요</div>
-          <div style={{ marginBottom: 8 }}>{letter.title}</div>
-          {letterUrl && <video src={letterUrl} controls style={{ width: "100%", borderRadius: 8 }} />}
+        <div className="e-card">
+          <div className="e-card-label">가족이 보냈어요</div>
+          <div className="e-card-title">{letter.title}</div>
+          {letterUrl && <video src={letterUrl} controls className="e-media" />}
         </div>
       )}
 

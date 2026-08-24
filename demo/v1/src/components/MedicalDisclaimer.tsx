@@ -3,7 +3,7 @@
 // 근거: Help4/법적문제 피해가기 공략.pdf §4, 체크리스트 3번
 export function MedicalDisclaimer() {
   return (
-    <p style={{ fontSize: 12, color: "var(--ink3)", marginTop: 24, lineHeight: 1.6 }}>
+    <p className="g-legal">
       본 서비스는 의료기기나 의료 진단 서비스가 아니며, AI 분석 결과는 일상 안부 확인을 위한 참고용 신호입니다.
       정확한 건강 상태는 반드시 전문 의료기관의 진료를 받으시기 바랍니다.
     </p>

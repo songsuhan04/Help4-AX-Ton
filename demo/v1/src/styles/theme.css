@@ -1,16 +1,66 @@
+/* Callog 디자인 토큰
+ *
+ * 색값은 눈대중이 아니라 알라미(Alarmy) UI 스크린샷 5장의 픽셀을 집계해 뽑은 실제 값이다.
+ * 배경 #121416 / 카드 #1E1F25 / 주요 버튼 #404ED7 / 강조 #FC314D 등.
+ *
+ * 이 파일은 "무슨 색인가"만 정하고, "어디에 쓰는가"는 elder.css·guardian.css가 정한다.
+ * 색을 바꿔야 하면 화면 파일이 아니라 항상 여기부터 본다.
+ */
+
 :root {
-  --ink: #16262b;
-  --ink2: #4a5c60;
-  --ink3: #8b9b9e;
-  --mist: #e7ebea;
-  --paper: #ffffff;
-  --line: #d3dbda;
-  --dawn: #1f4e5f;
-  --deep: #123642;
-  --jade: #2e7d5b;
-  --gold: #d9911f;
-  --red: #c0402b;
+  /* 바탕 */
+  --bg: #121416;
+  --surface: #1e1f25;
+  --surface-2: #282b33;
+  --line: #2c2f38;
+
+  /* 글자 */
+  --text: #f4f5f8;
+  --text-2: #9ba1b2;
+  --text-3: #6b7181;
+
+  /* 브랜드 */
+  --primary: #404ed7;
+  --primary-hi: #6865d8;
+  --primary-ink: #ffffff;
+  --accent: #fc314d;
+  --info: #14a8cd;
+
+  /* 위험도 3단계 — RiskLevel("안전"|"위험"|"심각")과 1:1로 맞춘다 */
+  --safe: #2e9e6b;
+  --warn: #e0a020;
+  --crit: #fc314d;
+  --safe-bg: rgba(46, 158, 107, 0.16);
+  --warn-bg: rgba(224, 160, 32, 0.16);
+  --crit-bg: rgba(252, 49, 77, 0.16);
+  --safe-fg: #4fbf8b;
+  --warn-fg: #efb84a;
+  --crit-fg: #ff7488;
+
+  /* 예전 토큰 이름 — 화면 코드 여러 곳이 아직 참조하고 있어 새 값으로 다시 이어둔다.
+     인라인 스타일 정리가 끝나면 이 묶음은 지워도 된다. */
+  --ink: var(--text);
+  --ink2: var(--text-2);
+  --ink3: var(--text-3);
+  --paper: var(--surface);
+  --mist: var(--surface-2);
+  --dawn: var(--primary);
+  --deep: #0f1114;
+  --jade: var(--safe);
+  --gold: var(--warn);
+  --red: var(--crit);
+
+  /* 치수 */
+  --r-sm: 12px;
+  --r: 16px;
+  --r-lg: 22px;
+  --shadow: 0 18px 44px -18px rgba(0, 0, 0, 0.72);
+  --shadow-frame: 0 40px 80px -30px rgba(0, 0, 0, 0.85);
+
+  /* 접근성 — FontSizeToggle이 1 / 1.15 / 1.3으로 바꾼다 */
   --font-scale: 1;
+
+  --font-ui: "Gothic A1", "Pretendard", -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
 }
 
 * {
@@ -21,11 +71,17 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--mist);
-  color: var(--ink);
-  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
   font-size: calc(16px * var(--font-scale));
+  line-height: 1.6;
+  /* 한글은 기본값이면 단어 중간에서 끊긴다("전해볼까요" → "전 / 해볼까요").
+     어절 단위로 끊고, 초대 링크처럼 띄어쓰기 없는 긴 문자열만 예외로 강제 줄바꿈한다. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
   -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
 }
 
 #root {
@@ -37,9 +93,32 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+}
+
 a {
   color: inherit;
 }
+
+/* 키보드 사용자에게 초점 위치가 보여야 한다 */
+:focus-visible {
+  outline: 2px solid var(--primary-hi);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ===== 앱 셸 =====
+ * 보호자 화면과 어르신 화면은 하는 일이 달라서 넓은 화면에서 다르게 펴진다.
+ *  - 어르신: 폰 비율을 유지한 채 액자에 넣고, 대신 글자와 버튼을 키운다(--e-zoom).
+ *  - 보호자: 모니터 폭을 그대로 쓴다(guardian.css의 .g-shell).
+ */
 
 .app-shell {
   min-height: 100vh;
@@ -47,31 +126,37 @@ a {
   flex-direction: column;
   align-items: center;
   padding: 24px 16px 64px;
+  background: var(--bg);
 }
 
 .app-card {
   width: 100%;
-  max-width: 480px;
-  background: var(--paper);
+  max-width: 520px;
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: var(--r-lg);
   padding: 28px 24px;
 }
 
-.app-card--elder {
-  background: linear-gradient(160deg, var(--dawn), var(--deep));
-  color: #fff;
-  border: none;
+/* 사이드바를 쓰는 보호자 화면(대상자 목록·상세)은 카드 폭 제한을 풀고 셸이 직접 편다 */
+.app-shell--wide {
+  padding: 0;
+  align-items: stretch;
 }
 
 .env-banner {
   width: 100%;
-  max-width: 480px;
+  max-width: 520px;
   margin-bottom: 16px;
   padding: 12px 16px;
-  border-radius: 12px;
-  background: #fdecea;
-  color: var(--red);
+  border-radius: var(--r-sm);
+  background: var(--crit-bg);
+  color: var(--crit-fg);
   font-size: 14px;
   text-align: center;
+}
+
+.app-shell--wide .env-banner {
+  max-width: none;
+  border-radius: 0;
 }

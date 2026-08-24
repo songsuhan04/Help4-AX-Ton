@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
-import { RiskDot } from "../components/RiskDot";
+import { RiskDot, RiskPill } from "../components/RiskDot";
 import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getErrorMessage } from "../lib/errors";
@@ -86,46 +86,88 @@ export default function GAdmin() {
     {} as Record<RiskLevel, number>
   );
 
-  return (
-    <AppShell>
-      <BackButton to="/guardian" />
-      <div className="g-header">관리자 대시보드</div>
-      <h1 className="g-title">전체 현황</h1>
-      <p className="g-sub">전체 가족의 데이터를 읽기 전용으로 모니터링합니다.</p>
+  const statStyle = (color: string) => ({ "--stat-color": color }) as CSSProperties;
 
-      <div style={{ display: "flex", gap: 8, margin: "16px 0" }}>
-        <div style={{ flex: 1, background: "var(--mist)", borderRadius: 12, padding: 12, textAlign: "center" }}>
-          <div style={{ fontSize: 20, fontWeight: 700 }}>{elders.length}</div>
-          <div style={{ fontSize: 12, color: "var(--ink3)" }}>전체</div>
-        </div>
-        <div style={{ flex: 1, background: "var(--mist)", borderRadius: 12, padding: 12, textAlign: "center" }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "var(--gold)" }}>{counts["위험"] ?? 0}</div>
-          <div style={{ fontSize: 12, color: "var(--ink3)" }}>위험</div>
-        </div>
-        <div style={{ flex: 1, background: "var(--mist)", borderRadius: 12, padding: 12, textAlign: "center" }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "var(--red)" }}>{counts["심각"] ?? 0}</div>
-          <div style={{ fontSize: 12, color: "var(--ink3)" }}>심각</div>
+  return (
+    <AppShell
+      aside={
+        <>
+          <div className="g-brand">Callog(콜록)</div>
+          <div className="g-aside-actions">
+            <BackButton to="/guardian" />
+          </div>
+          <div className="g-aside-foot">
+            전체 가족의 데이터를 읽기 전용으로 봅니다. 수정·삭제는 각 보호자만 할 수 있습니다.
+          </div>
+        </>
+      }
+    >
+      <div className="g-toolbar">
+        <div>
+          <div className="g-header">관리자 대시보드</div>
+          <h1 className="g-title">전체 현황</h1>
+          <p className="g-sub">전체 가족의 데이터를 읽기 전용으로 모니터링합니다.</p>
         </div>
       </div>
 
-      {loading && <p>불러오는 중...</p>}
-      {error && <p style={{ color: "var(--red)", fontSize: 13 }}>{error}</p>}
+      <div className="g-stats">
+        <div className="g-stat" style={statStyle("var(--primary)")}>
+          <div className="g-stat-label">전체</div>
+          <div className="g-stat-value">
+            {elders.length}
+            <small>명</small>
+          </div>
+        </div>
+        <div className="g-stat" style={statStyle("var(--warn)")}>
+          <div className="g-stat-label">위험</div>
+          <div className="g-stat-value">
+            {counts["위험"] ?? 0}
+            <small>명</small>
+          </div>
+        </div>
+        <div className="g-stat" style={statStyle("var(--crit)")}>
+          <div className="g-stat-label">심각</div>
+          <div className="g-stat-value">
+            {counts["심각"] ?? 0}
+            <small>명</small>
+          </div>
+        </div>
+      </div>
+
+      {error && <p className="g-error">{error}</p>}
+      {loading && <p className="g-sub">불러오는 중...</p>}
       {!loading && sorted.length === 0 && !error && <p className="g-sub">등록된 어르신이 없습니다.</p>}
 
-      {sorted.map((elder) => {
-        const risk = riskByElder[elder.id];
-        return (
-          <button key={elder.id} className="g-list-item" onClick={() => navigate(`/guardian/elders/${elder.id}`)}>
-            <RiskDot level={elder.priority_status} />
-            <div style={{ flex: 1 }}>
-              <div className="g-list-name">{elder.name} <span style={{ fontSize: 12, color: "var(--ink3)" }}>{elder.relationship}</span></div>
-              <div className="g-list-meta">보호자: {elder.family_account?.email ?? "알 수 없음"}</div>
-              {risk && <div className="g-list-meta">{risk.reason}</div>}
-            </div>
-            <span style={{ color: "var(--ink3)" }}>›</span>
-          </button>
-        );
-      })}
+      {sorted.length > 0 && (
+        <div className="g-card">
+          <div className="g-card-title">
+            <span>대상자</span>
+            <span>위험도순</span>
+          </div>
+          {sorted.map((elder) => {
+            const risk = riskByElder[elder.id];
+            return (
+              <button
+                key={elder.id}
+                className="g-list-item"
+                onClick={() => navigate(`/guardian/elders/${elder.id}`)}
+              >
+                <RiskDot level={elder.priority_status} />
+                <div className="g-list-body">
+                  <div className="g-list-name">
+                    {elder.name}
+                    <small>{elder.relationship}</small>
+                  </div>
+                  <div className="g-list-meta">보호자: {elder.family_account?.email ?? "알 수 없음"}</div>
+                  {risk && <div className="g-list-meta">{risk.reason}</div>}
+                </div>
+                <RiskPill level={elder.priority_status} />
+                <span className="g-chev">›</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <MedicalDisclaimer />
     </AppShell>

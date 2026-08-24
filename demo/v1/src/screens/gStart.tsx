@@ -62,11 +62,11 @@ export default function GStart() {
             <label>비밀번호</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={!supabaseConfigured} />
           </div>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--ink2)", marginBottom: 16 }}>
+          <label className="g-check" style={{ marginBottom: 16 }}>
             <input type="checkbox" checked={autoLogin} onChange={(e) => toggleAutoLogin(e.target.checked)} />
             로그인 상태 유지
           </label>
-          {error && <p style={{ color: "var(--red)", fontSize: 13 }}>{error}</p>}
+          {error && <p className="g-error">{error}</p>}
           <button className="g-button" type="submit" disabled={loading || !supabaseConfigured}>
             {loading ? "로그인 중..." : "로그인"}
           </button>
@@ -76,7 +76,7 @@ export default function GStart() {
         </form>
       )}
 
-      <a href="/terms" target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "var(--ink3)", display: "block", marginTop: 24, textAlign: "center" }}>
+      <a href="/terms" target="_blank" rel="noreferrer" className="g-link g-link--block">
         이용약관 및 개인정보 처리 안내
       </a>
     </AppShell>

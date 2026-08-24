@@ -1,98 +1,548 @@
+/* 어르신 화면
+ *
+ * 두 가지 원칙만 지킨다.
+ *  1. 한 화면에 할 일 하나. 넓혀봐야 나눌 정보가 없으므로 폭 대신 크기를 키운다.
+ *  2. 기본 상태에서 이미 읽혀야 한다. "글씨 크게"는 더 필요한 분을 위한 것이지,
+ *     기본이 작아도 된다는 뜻이 아니다. 본문 17px / 인사말 27px / 버튼 높이 60px 이상.
+ *
+ * 바탕은 4종을 두고 어르신이 직접 고른다(components/DisplaySettings.tsx).
+ * 백내장이 있으면 어두운 배경의 흰 글씨가 번져 보이고, 노안만 있으면 크기만 키우면 되므로
+ * 하나를 정해주는 것보다 고르게 하는 편이 맞다.
+ */
+
+/* ===== 바탕 4종 ===== */
+
+:root {
+  /* 밤하늘 — 기본값 */
+  --e-bg: #121416;
+  --e-card: #1e1f25;
+  --e-card-2: #282b33;
+  --e-text: #ffffff;
+  --e-text-2: rgba(255, 255, 255, 0.64);
+  --e-primary: #404ed7;
+  --e-primary-ink: #ffffff;
+  --e-accent: #fc314d;
+  --e-line: rgba(255, 255, 255, 0.1);
+  --e-glow: rgba(64, 78, 215, 0.22);
+  --e-bezel: #2a2c34;
+}
+
+:root[data-elder-theme="daylight"] {
+  /* 한낮 — 백내장·수정체 혼탁으로 다크에서 글자가 번져 보이는 경우 */
+  --e-bg: #f7f8fb;
+  --e-card: #ffffff;
+  --e-card-2: #edeff5;
+  --e-text: #111318;
+  --e-text-2: #565c6b;
+  --e-primary: #2a37b8;
+  --e-primary-ink: #ffffff;
+  --e-accent: #c81734;
+  --e-line: rgba(17, 19, 24, 0.12);
+  --e-glow: rgba(42, 55, 184, 0.12);
+  --e-bezel: #d5d8e2;
+}
+
+:root[data-elder-theme="warm"] {
+  /* 노을 — 청색광이 부담스럽거나 잠들기 전 사용이 잦은 경우 */
+  --e-bg: #1b1512;
+  --e-card: #2a211c;
+  --e-card-2: #382c25;
+  --e-text: #fff6ee;
+  --e-text-2: rgba(255, 246, 238, 0.68);
+  --e-primary: #c4622a;
+  --e-primary-ink: #ffffff;
+  --e-accent: #e8a33c;
+  --e-line: rgba(255, 246, 238, 0.14);
+  --e-glow: rgba(196, 98, 42, 0.24);
+  --e-bezel: #3a2e26;
+}
+
+:root[data-elder-theme="maxcontrast"] {
+  /* 또렷하게 — 저시력용 검정 바탕 + 노란 글자(고대비 표준 조합) */
+  --e-bg: #000000;
+  --e-card: #101010;
+  --e-card-2: #1c1c1c;
+  --e-text: #ffffff;
+  --e-text-2: #d6d6d6;
+  --e-primary: #ffd400;
+  --e-primary-ink: #000000;
+  --e-accent: #ffd400;
+  --e-line: #4a4a4a;
+  --e-glow: rgba(255, 212, 0, 0.16);
+  --e-bezel: #333333;
+}
+
+/* ===== 셸 ===== */
+
+.app-shell--elder {
+  padding: 0;
+  justify-content: center;
+  background:
+    radial-gradient(110% 66% at 50% 0%, var(--e-glow), transparent 62%),
+    var(--e-bg);
+}
+
+.app-card--elder {
+  /* --e-fs = 어르신 화면 전용 글자 배율. FontSizeToggle이 바꾸는 --font-scale에
+     넓은 화면 확대분(--e-zoom)을 곱한 값이다. lib/fontScale.ts의 fs()도 이 값을 쓴다. */
+  --e-fs: calc(var(--font-scale) * var(--e-zoom, 1));
+
+  width: 100%;
+  max-width: 520px;
+  min-height: 100vh;
+  background: transparent;
+  color: var(--e-text);
+  border: none;
+  border-radius: 0;
+  padding: 20px 20px 44px;
+  display: flex;
+  flex-direction: column;
+  /* 화면 설정 시트(.e-sheet-backdrop)가 넓은 화면에서 이 카드를 기준으로 앉는다 */
+  position: relative;
+}
+
+/* 넓은 화면에서는 폰 비율 액자에 넣고 글자를 한 단계 키운다.
+   PC에서도 스마트폰과 같은 자리에 같은 것이 있어야, 자녀가 전화로
+   "가운데 파란 버튼 누르세요"라고 설명할 수 있다. */
+@media (min-width: 768px) {
+  .app-shell--elder {
+    padding: 40px 16px;
+  }
+
+  .app-card--elder {
+    --e-zoom: 1.08;
+    max-width: 468px;
+    min-height: 0;
+    background: var(--e-bg);
+    border-radius: 42px;
+    padding: 34px 30px 40px;
+    box-shadow:
+      var(--shadow-frame),
+      0 0 0 10px var(--e-bezel),
+      0 0 0 11px rgba(255, 255, 255, 0.09);
+    overflow: hidden;
+  }
+}
+
+/* ===== 머리 ===== */
+
 .e-topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: calc(13px * var(--font-scale));
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 16px;
+  gap: 12px;
+  font-size: calc(14px * var(--e-fs, 1));
+  color: var(--e-text-2);
+  margin-bottom: 14px;
+  flex: none;
 }
 
+.e-brand {
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: var(--e-text);
+}
+
+.e-back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--e-card);
+  border: 1px solid var(--e-line);
+  border-radius: 999px;
+  color: var(--e-text);
+  font-size: calc(15px * var(--e-fs, 1));
+  font-weight: 700;
+  padding: 10px 18px;
+  margin-bottom: 14px;
+  flex: none;
+}
+
+/* 읽어주기 · 글씨 크게 같은 작은 알약 버튼 */
+.e-speak,
+.e-pill {
+  display: inline-flex;
+  /* .app-card--elder가 세로 flex라 그냥 두면 알약이 가로로 늘어난다 */
+  align-self: flex-start;
+  align-items: center;
+  gap: 6px;
+  /* 터치 타깃 44px 이상 — 손이 떨리는 분도 한 번에 누를 수 있어야 한다 */
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--e-line);
+  background: var(--e-card);
+  color: var(--e-text);
+  font-size: calc(14px * var(--e-fs, 1));
+  font-weight: 700;
+  flex: none;
+}
+
+/* ===== 본문 ===== */
+
 .e-question {
-  font-family: "Gowun Batang", serif;
-  font-size: calc(28px * var(--font-scale));
-  line-height: 1.4;
-  margin: 12px 0 24px;
+  font-family: inherit;
+  font-size: calc(27px * var(--e-fs, 1));
+  font-weight: 800;
+  line-height: 1.34;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  margin: 14px 0 18px;
+  color: var(--e-text);
+}
+
+.e-lead {
+  font-size: calc(17px * var(--e-fs, 1));
+  line-height: 1.62;
+  color: var(--e-text-2);
+  margin: 0 0 6px;
+}
+
+.e-meta {
+  font-size: calc(15px * var(--e-fs, 1));
+  color: var(--e-text-2);
+  margin: 0;
+}
+
+.e-error {
+  font-size: calc(15px * var(--e-fs, 1));
+  color: var(--e-accent);
+  font-weight: 700;
+  margin: 8px 0;
+}
+
+.e-hero {
+  text-align: center;
+  padding: 26px 0 10px;
+  flex: none;
+}
+
+.e-hero .e-question {
+  margin-top: 8px;
+}
+
+.e-hero-mark {
+  font-size: calc(42px * var(--e-fs, 1));
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+/* ===== 카드 ===== */
+
+.e-card {
+  background: var(--e-card);
+  border: 1px solid var(--e-line);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  flex: none;
+}
+
+.e-card-label {
+  font-size: calc(14px * var(--e-fs, 1));
+  color: var(--e-text-2);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.e-card-title {
+  font-size: calc(18px * var(--e-fs, 1));
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.e-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.e-badge-new {
+  font-size: calc(13px * var(--e-fs, 1));
+  font-weight: 800;
+  color: var(--e-primary-ink);
+  background: var(--e-accent);
+  border-radius: 999px;
+  padding: 3px 10px;
+  flex: none;
+}
+
+.e-media {
+  width: 100%;
+  border-radius: var(--r);
+  background: #000;
+  display: block;
+}
+
+.e-media--live {
+  aspect-ratio: 4 / 3;
+  margin-bottom: 16px;
+  background: var(--e-card-2);
+}
+
+/* ===== 버튼 ===== */
+
+.e-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  border-radius: var(--r-lg);
+  background: var(--e-primary);
+  color: var(--e-primary-ink);
+  font-size: calc(19px * var(--e-fs, 1));
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  padding: calc(19px * var(--e-fs, 1)) 16px;
+  margin-top: 14px;
+  flex: none;
+}
+
+.e-primary:disabled {
+  opacity: 0.45;
+}
+
+.e-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid var(--e-line);
+  border-radius: var(--r-lg);
+  background: var(--e-card);
+  color: var(--e-text);
+  font-size: calc(17px * var(--e-fs, 1));
+  font-weight: 700;
+  padding: calc(16px * var(--e-fs, 1)) 16px;
+  margin-top: 10px;
+  flex: none;
+}
+
+.e-secondary:disabled {
+  opacity: 0.45;
 }
 
 .e-choice {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 18px 20px;
-  margin-bottom: 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  font-size: calc(17px * var(--font-scale));
+  padding: calc(17px * var(--e-fs, 1)) 18px;
+  margin-top: 11px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--e-line);
+  background: var(--e-card);
+  color: var(--e-text);
+  font-size: calc(17px * var(--e-fs, 1));
+  font-weight: 700;
+  flex: none;
 }
 
 .e-choice--selected {
-  background: var(--gold);
-  border-color: var(--gold);
-  color: var(--deep);
-  font-weight: 700;
+  background: var(--e-primary);
+  border-color: var(--e-primary);
+  color: var(--e-primary-ink);
 }
 
-.e-primary {
-  width: 100%;
-  padding: 18px;
-  border-radius: 14px;
-  border: none;
-  background: var(--gold);
-  color: var(--deep);
-  font-size: calc(18px * var(--font-scale));
-  font-weight: 700;
-  margin-top: 8px;
-}
-
-.e-primary:disabled {
-  opacity: 0.5;
-}
-
-.e-secondary {
-  width: 100%;
-  padding: 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background: transparent;
-  color: #fff;
-  font-size: calc(15px * var(--font-scale));
-  margin-top: 10px;
-}
-
-.e-speak {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  font-size: calc(13px * var(--font-scale));
-}
+/* ===== 진행 표시 ===== */
 
 .e-progress {
-  font-size: calc(13px * var(--font-scale));
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 8px;
+  display: flex;
+  gap: 5px;
+  margin: 12px 0 4px;
+  flex: none;
 }
+
+.e-progress-seg {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--e-line);
+}
+
+.e-progress-seg--on {
+  background: var(--e-primary);
+}
+
+.e-progress-label {
+  font-size: calc(14px * var(--e-fs, 1));
+  color: var(--e-text-2);
+  font-weight: 700;
+  flex: none;
+}
+
+/* ===== 연속 참여 ===== */
 
 .e-streak {
   display: flex;
-  gap: 6px;
+  gap: 7px;
   justify-content: center;
-  margin: 16px 0;
+  margin: 18px 0;
 }
 
 .e-streak-dot {
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--e-line);
 }
 
 .e-streak-dot--filled {
-  background: var(--jade);
+  background: var(--e-accent);
+}
+
+/* ===== 안내 문구 ===== */
+
+.e-notice {
+  font-size: calc(14px * var(--e-fs, 1));
+  line-height: 1.6;
+  color: var(--e-text-2);
+  background: var(--e-card-2);
+  border: 1px solid var(--e-line);
+  border-radius: var(--r-sm);
+  padding: 11px 13px;
+  margin: 0 0 12px;
+  flex: none;
+}
+
+/* ===== 화면 설정 시트 =====
+ * 바탕과 글씨 크기를 직접 눌러보며 고르는 곳.
+ *
+ * 어두운 막을 깔지 않는다. 고르는 대상이 바탕색인데 그 위에 검은 막을 덮으면
+ * "한낮"을 골라도 흰 바탕이 회색으로 보여서, 무엇을 고른 건지 판단할 수가 없다.
+ * 대신 시트를 아래쪽 절반에만 띄워 위쪽 인사말과 바탕이 제 색으로 남게 한다.
+ */
+
+.e-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 50;
+  padding: 10px;
+}
+
+.e-sheet {
+  width: 100%;
+  max-width: 500px;
+  /* 인사말과 바탕이 시트 위로 남을 만큼만 차지한다 */
+  max-height: 58vh;
+  overflow-y: auto;
+  background: var(--e-card);
+  color: var(--e-text);
+  border: 1px solid var(--e-line);
+  border-radius: 26px;
+  padding: 16px 18px 20px;
+  box-shadow: 0 -12px 44px rgba(0, 0, 0, 0.45);
+}
+
+/* 넓은 화면에서는 폰 액자 안쪽 아래에 띄운다 — 액자 밖 화면 하단에 붙으면
+   폰과 상관없는 판이 하나 더 열린 것처럼 읽힌다. */
+@media (min-width: 768px) {
+  .e-sheet-backdrop {
+    position: absolute;
+    padding: 0;
+  }
+
+  .e-sheet {
+    max-width: 100%;
+    max-height: 72%;
+  }
+}
+
+.e-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+
+/* 고른 즉시 적용되므로 "확인"할 것이 없다. 이 버튼은 닫기일 뿐이라 제목 줄에 둔다. */
+.e-sheet-close {
+  flex: none;
+  background: var(--e-card-2);
+  border: 1px solid var(--e-line);
+  border-radius: 999px;
+  color: var(--e-text);
+  font-size: calc(15px * var(--e-fs, 1));
+  font-weight: 700;
+  padding: 10px 18px;
+}
+
+.e-sheet-title {
+  font-size: calc(19px * var(--e-fs, 1));
+  font-weight: 800;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.e-sheet-sub {
+  font-size: calc(14px * var(--e-fs, 1));
+  line-height: 1.45;
+  color: var(--e-text-2);
+  margin: 0 0 12px;
+}
+
+.e-opt-group {
+  margin-bottom: 14px;
+}
+
+.e-opt-legend {
+  font-size: calc(15px * var(--e-fs, 1));
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.e-opt-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.e-opt-row--three {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.e-opt-row--four {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.e-opt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: var(--e-card-2);
+  border: 2px solid var(--e-line);
+  border-radius: var(--r);
+  padding: 11px 12px;
+  color: var(--e-text);
+  font-size: calc(16px * var(--e-fs, 1));
+  font-weight: 700;
+}
+
+.e-opt[aria-pressed="true"] {
+  border-color: var(--e-primary);
+}
+
+/* 버튼을 그 바탕 자체로 칠한다 — 색은 컴포넌트가 인라인으로 넣는다 */
+.e-opt--theme {
+  padding: 14px 6px;
+  font-size: calc(15px * var(--e-fs, 1));
+}
+
+.e-opt--theme[aria-pressed="true"] {
+  border-color: var(--opt-ring);
+  box-shadow: 0 0 0 2px var(--opt-ring);
+}
+
+.e-opt-size {
+  font-weight: 800;
 }

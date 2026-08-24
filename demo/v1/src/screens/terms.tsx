@@ -16,8 +16,8 @@ export default function Terms() {
       <div className="g-header">이용약관 및 서비스 안내</div>
       <h1 className="g-title">Callog(콜록) 이용약관</h1>
 
-      <section style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 15 }}>1. 서비스 성격</h2>
+      <section className="g-terms-section">
+        <h2 className="g-terms-heading">1. 서비스 성격</h2>
         <p className="g-sub">
           Callog는 독거 어르신과 가족(보호자)이 매일 짧은 안부를 주고받도록 돕는 서비스입니다. 안부 응답과 음성을
           바탕으로 AI가 참고용 신호를 제공하지만, <strong>본 서비스는 의료기기나 의료 진단 서비스가 아닙니다.</strong> AI
@@ -26,8 +26,8 @@ export default function Terms() {
         </p>
       </section>
 
-      <section style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 15 }}>2. 응급 상황 및 알림 관련 면책</h2>
+      <section className="g-terms-section">
+        <h2 className="g-terms-heading">2. 응급 상황 및 알림 관련 면책</h2>
         <p className="g-sub">
           본 서비스는 119 등 응급 구조 서비스가 아니며, 응급 상황을 감지하거나 신고하지 않습니다. 네트워크·서버 장애,
           어르신의 기기 문제 등으로 인해 위험 알림이 지연되거나 누락될 수 있습니다. 위험 알림 수신 여부와 관계없이
@@ -36,8 +36,8 @@ export default function Terms() {
         </p>
       </section>
 
-      <section style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 15 }}>3. 개인정보 수집·이용</h2>
+      <section className="g-terms-section">
+        <h2 className="g-terms-heading">3. 개인정보 수집·이용</h2>
         <p className="g-sub">
           가입 시 이름·이메일 등 일반 개인정보를 수집합니다. 어르신의 지병 등 건강에 관한 정보는 개인정보보호법상
           민감정보로, 일반 개인정보와 별도로 동의를 받습니다. 음성 안부와 영상편지는 AI 분석을 위해 Google Gemini
@@ -46,23 +46,23 @@ export default function Terms() {
         </p>
       </section>
 
-      <section style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 15 }}>4. 녹화/녹음 시 유의사항</h2>
+      <section className="g-terms-section">
+        <h2 className="g-terms-heading">4. 녹화/녹음 시 유의사항</h2>
         <p className="g-sub">
           영상편지·말하기 안부를 녹화·녹음할 때는 본인의 음성과 모습만 담아주세요. 타인의 동의 없이 촬영·녹음할 경우
           법적 책임을 질 수 있습니다.
         </p>
       </section>
 
-      <section style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 15 }}>5. 보호자의 대리 입력 책임</h2>
+      <section className="g-terms-section">
+        <h2 className="g-terms-heading">5. 보호자의 대리 입력 책임</h2>
         <p className="g-sub">
           보호자가 어르신을 대신하여 지병 등 정보를 입력하는 경우, 어르신(정보주체) 본인의 사전 동의를 받았음을
           전제로 합니다.
         </p>
       </section>
 
-      <p style={{ fontSize: 12, color: "var(--ink3)", marginTop: 32 }}>
+      <p className="g-legal">
         본 약관은 팀이 정한 서비스 운영 방침을 안내하는 것으로, 정식 법률 자문을 대체하지 않습니다.
       </p>
     </AppShell>

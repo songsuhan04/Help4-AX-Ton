@@ -115,6 +115,17 @@ export default function ECheck() {
     load();
   }, []);
 
+  // 문항 중간이면 이전 문항으로(잘못 고른 답을 고치도록), 첫 문항이면 설문 진입 전
+  // 화면으로 나간다. 근거: 실사용 피드백 — "설문할 때 뒤로가기 버튼이 없어졌어"
+  function goBack() {
+    if (index > 0) {
+      setAnswers((prev) => prev.slice(0, -1));
+      setIndex((i) => i - 1);
+    } else {
+      navigate(-1);
+    }
+  }
+
   function answer(option: GeneratedOption) {
     const question = questions[index];
     const next = [
@@ -153,6 +164,9 @@ export default function ECheck() {
 
   return (
     <AppShell variant="elder">
+      <button className="e-back" onClick={goBack}>
+        ← 이전
+      </button>
       <div className="e-topbar">
         <DisplaySettings />
         <span className="e-brand">Callog</span>

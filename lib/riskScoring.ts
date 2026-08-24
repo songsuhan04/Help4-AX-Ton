@@ -50,7 +50,7 @@ export async function assessRisk(admin: SupabaseClient, elderProfileId: string, 
 
   if (checkin.skipped) {
     score += 1;
-    reasons.push("오늘 안부체크를 건너뛰었습니다");
+    reasons.push("오늘 안부체크를 건너뛰셨어요. 확인이 필요합니다");
   }
 
   const answers = Array.isArray(checkin.answers) ? (checkin.answers as AnsweredQuestion[]) : [];
@@ -65,14 +65,17 @@ export async function assessRisk(admin: SupabaseClient, elderProfileId: string, 
       // ×1.5 — Help4/발표 자료/위험도가중치 근거자료.docx §4.1에서 검증 통과(근거등급 A).
       // 61개 코호트 IPD 100만명 기준 보고된 효과크기 범위(HR/OR 1.36~2.11)의 보수적 하위-중앙값.
       points *= 1.5;
-      if (points > 0) reasons.push("복약을 놓치셨어요(고혈압)");
+      // "놓치셨어요"처럼 확정적으로 단정하지 않고, 어르신이 실제로 고른 답변을 그대로
+      // 보여주며 "확인이 필요합니다"로 끝맺는다 — 보호자가 무엇을 봐야 하는지 바로 알 수 있게.
+      // 근거: 실사용 피드백 — "어떤 점을 확인해봐야 하는지로 나오는 게 더 나을 것 같다"
+      if (points > 0) reasons.push(`복약 질문에 "${a.choice}"라고 답하셨어요. 확인이 필요합니다`);
     } else if (a.category === "meal" && conditionTypes.has("diabetes") && a.severity !== "ok") {
       // ×2.0 — 위와 같은 문서 §4.2 권고값(근거등급 A: INTERHEART OR 2.37, IPD 메타분석 HR 1.44).
       // 문서는 "당뇨 가중치가 고혈압보다 높아야 상대 서열이 문헌과 일치한다"고 명시 — 기존 ×2.4(임의값)에서 조정.
       points *= 2.0;
-      if (points > 0) reasons.push("식사를 거르셨어요(당뇨병 저혈당 위험)");
+      if (points > 0) reasons.push(`식사 질문에 "${a.choice}"라고 답하셨어요. 확인이 필요합니다`);
     } else if (points > 0) {
-      reasons.push(`"${a.question}" 응답이 평소와 다릅니다`);
+      reasons.push(`"${a.question}"에 "${a.choice}"라고 답하셨어요. 확인이 필요합니다`);
     }
     score += points;
   }
@@ -113,7 +116,7 @@ export async function assessRisk(admin: SupabaseClient, elderProfileId: string, 
       });
     if (allNoOuting) {
       score += 1;
-      reasons.push(`최근 ${NO_OUTING_ALERT_DAYS}일 연속 외출을 안 하셨어요`);
+      reasons.push(`최근 ${NO_OUTING_ALERT_DAYS}일 연속 외출을 안 하셨어요. 확인이 필요합니다`);
     }
   }
 

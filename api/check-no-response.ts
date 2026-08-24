@@ -79,7 +79,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         elder_profile_id: elder.id,
         date: today,
         level: "위험",
-        reason: `안부 시각(${elder.checkin_time.slice(0, 5)})으로부터 ${NO_RESPONSE_ALERT_HOURS}시간 넘게 응답이 없습니다`,
+        reason: `안부 시각(${elder.checkin_time.slice(0, 5)})으로부터 ${NO_RESPONSE_ALERT_HOURS}시간 넘게 응답이 없어요. 확인이 필요합니다`,
         triggered_by: { no_response_hours: NO_RESPONSE_ALERT_HOURS },
       },
       { onConflict: "elder_profile_id,date" }

@@ -14,6 +14,19 @@ interface AnsweredQuestion {
 
 const SEVERITY_POINTS: Record<Severity, number> = { ok: 0, warn: 1, danger: 2 };
 const LEVEL_THRESHOLD = { 심각: 3, 위험: 1 } as const;
+const NO_OUTING_ALERT_DAYS = 3;
+
+// date 포함, 그 이전으로 n일치 날짜 문자열을 최신순으로 반환 — daily_checkin의 date 컬럼과
+// 직접 비교하기 위한 형식(yyyy-mm-dd)이라 UTC 기준으로 계산해도 문제없다(달력 날짜 비교일 뿐).
+function lastNDates(dateStr: string, n: number): string[] {
+  const out: string[] = [];
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  for (let i = 0; i < n; i++) {
+    out.push(d.toISOString().slice(0, 10));
+    d.setUTCDate(d.getUTCDate() - 1);
+  }
+  return out;
+}
 
 export async function assessRisk(admin: SupabaseClient, elderProfileId: string, date: string): Promise<void> {
   const [{ data: conditions, error: condErr }, { data: checkin, error: checkinErr }] = await Promise.all([
@@ -74,6 +87,34 @@ export async function assessRisk(admin: SupabaseClient, elderProfileId: string, 
   if (voice?.analysis_status === "failed") {
     score += 1;
     reasons.push("음성 분석에 실패해 확인이 필요합니다");
+  }
+
+  // 외출 연속 없음 — 오늘 하루만 보면 위험 신호가 아니어도 며칠 연속되면 그 자체가 위험 신호다.
+  // 관절염 보유자는 단일 답변과 마찬가지로 외출 여부를 위험 요인으로 보지 않으므로 이 검사도 제외한다.
+  if (!conditionTypes.has("arthritis")) {
+    const { data: recentCheckins, error: recentErr } = await admin
+      .from("daily_checkin")
+      .select("date,answers")
+      .eq("elder_profile_id", elderProfileId)
+      .lte("date", date)
+      .order("date", { ascending: false })
+      .limit(NO_OUTING_ALERT_DAYS);
+    if (recentErr) console.error("assessRisk: recent daily_checkin query failed", recentErr);
+
+    const rows = recentCheckins ?? [];
+    const expectedDates = lastNDates(date, NO_OUTING_ALERT_DAYS);
+    const isConsecutive = rows.length === NO_OUTING_ALERT_DAYS && rows.every((row, i) => row.date === expectedDates[i]);
+    const allNoOuting =
+      isConsecutive &&
+      rows.every((row) => {
+        const dayAnswers = Array.isArray(row.answers) ? (row.answers as AnsweredQuestion[]) : [];
+        const outing = dayAnswers.find((a) => a?.category === "outing");
+        return outing && outing.severity !== "ok";
+      });
+    if (allNoOuting) {
+      score += 1;
+      reasons.push(`최근 ${NO_OUTING_ALERT_DAYS}일 연속 외출을 안 하셨어요`);
+    }
   }
 
   const level = score >= LEVEL_THRESHOLD.심각 ? "심각" : score >= LEVEL_THRESHOLD.위험 ? "위험" : "안전";

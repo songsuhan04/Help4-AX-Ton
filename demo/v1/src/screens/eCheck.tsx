@@ -6,6 +6,7 @@ import { ProgressBar } from "../components/ProgressBar";
 import { DisplaySettings } from "../components/DisplaySettings";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
+import { todaySeoul } from "../lib/date";
 
 export const SCREEN_ID = "eCheck";
 
@@ -31,7 +32,6 @@ interface AnsweredQuestion {
   severity: Severity;
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
 
 export default function ECheck() {
   const navigate = useNavigate();
@@ -54,7 +54,7 @@ export default function ECheck() {
         .from("daily_checkin")
         .select("questions")
         .eq("elder_profile_id", elderId)
-        .eq("date", today())
+        .eq("date", todaySeoul())
         .maybeSingle();
 
       if (existing?.questions) {
@@ -106,7 +106,7 @@ export default function ECheck() {
       await supabase
         .from("daily_checkin")
         .upsert(
-          { elder_profile_id: elderId, date: today(), questions: generated },
+          { elder_profile_id: elderId, date: todaySeoul(), questions: generated },
           { onConflict: "elder_profile_id,date" }
         );
       setLoading(false);
@@ -142,7 +142,7 @@ export default function ECheck() {
 
   async function finish(finalAnswers: AnsweredQuestion[]) {
     const elderId = getStoredElderProfileId();
-    const date = today();
+    const date = todaySeoul();
     await getSupabase()
       .from("daily_checkin")
       .upsert(

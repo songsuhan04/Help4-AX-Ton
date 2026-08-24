@@ -9,6 +9,7 @@ import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getSignedUrl, deleteFromBucket } from "../lib/storage";
 import { getRpcErrorMessage } from "../lib/errors";
 import { computeStreak } from "../lib/streak";
+import { shiftDateString, todaySeoul } from "../lib/date";
 import type { RiskLevel } from "../config/riskConstants";
 
 const TREND_DAYS = 14;
@@ -134,9 +135,7 @@ export default function GDetail() {
     // 최근 위험도 추이 — 기능설계서.md §1 "꺾은선 그래프 기록"
     const days: string[] = [];
     for (let i = TREND_DAYS - 1; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      days.push(d.toISOString().slice(0, 10));
+      days.push(shiftDateString(todaySeoul(), -i));
     }
     supabase
       .from("risk_assessment")

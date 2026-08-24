@@ -23,7 +23,19 @@ function seoulNow(): Date {
     hour12: false,
   }).formatToParts(new Date());
   const get = (t: string) => parts.find((p) => p.type === t)!.value;
-  return new Date(`${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}`);
+  // 한국 시간의 시:분을 그대로 담은 Date — 시각 비교(deadline)에만 쓴다.
+  // Z를 붙여 UTC로 못박아, 서버 타임존이 UTC가 아니어도 해석이 달라지지 않게 한다.
+  return new Date(`${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}Z`);
+}
+
+/** 한국 시간 기준 오늘 날짜(yyyy-mm-dd) — DB의 date 컬럼과 같은 기준(demo/v1/src/lib/date.ts와 동일 규칙) */
+function todaySeoul(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -42,7 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const admin = createClient(supabaseUrl, serviceKey);
   const now = seoulNow();
-  const today = now.toISOString().slice(0, 10);
+  const today = todaySeoul();
 
   const { data: elders, error } = await admin.from("elder_profile").select("id,checkin_time");
   if (error) {
@@ -61,9 +73,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (checkin) continue; // 이미 응답함 — 대상 아님
 
     const [h, m] = (elder.checkin_time as string).slice(0, 5).split(":").map(Number);
+    // now가 Z로 못박힌 Date라 setUTC*로 맞춰야 서버 타임존과 무관하게 같은 결과가 나온다
     const deadline = new Date(now);
-    deadline.setHours(h, m, 0, 0);
-    deadline.setHours(deadline.getHours() + NO_RESPONSE_ALERT_HOURS);
+    deadline.setUTCHours(h + NO_RESPONSE_ALERT_HOURS, m, 0, 0);
     if (now < deadline) continue; // 아직 7시간 안 지남
 
     const { data: existing } = await admin

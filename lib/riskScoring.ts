@@ -16,11 +16,12 @@ const SEVERITY_POINTS: Record<Severity, number> = { ok: 0, warn: 1, danger: 2 };
 const LEVEL_THRESHOLD = { 심각: 3, 위험: 1 } as const;
 const NO_OUTING_ALERT_DAYS = 3;
 
-// date 포함, 그 이전으로 n일치 날짜 문자열을 최신순으로 반환 — daily_checkin의 date 컬럼과
-// 직접 비교하기 위한 형식(yyyy-mm-dd)이라 UTC 기준으로 계산해도 문제없다(달력 날짜 비교일 뿐).
+// date 포함, 그 이전으로 n일치 날짜 문자열을 최신순으로 반환. 이미 yyyy-mm-dd 형식의
+// 서비스 날짜(한국 시간 기준)를 받아 달력 날짜만 빼는 연산이라, 정오 기준으로 계산해
+// 타임존/DST 경계에서 하루가 밀리지 않게 한다.
 function lastNDates(dateStr: string, n: number): string[] {
   const out: string[] = [];
-  const d = new Date(`${dateStr}T00:00:00Z`);
+  const d = new Date(`${dateStr}T12:00:00Z`);
   for (let i = 0; i < n; i++) {
     out.push(d.toISOString().slice(0, 10));
     d.setUTCDate(d.getUTCDate() - 1);

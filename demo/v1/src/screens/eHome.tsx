@@ -5,11 +5,11 @@ import { SpeakButton } from "../components/SpeakButton";
 import { DisplaySettings } from "../components/DisplaySettings";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
+import { todaySeoul } from "../lib/date";
 import { computeStreak } from "../lib/streak";
 
 export const SCREEN_ID = "eHome";
 
-const today = () => new Date().toISOString().slice(0, 10);
 
 // 어르신이 언제든 돌아올 수 있는 진짜 "처음 화면". 예전엔 완료 화면들의
 // "처음 화면으로" 버튼이 안부 설문 시작 화면(/elder/check)으로 보냈는데,
@@ -32,7 +32,7 @@ export default function EHome() {
       .from("daily_checkin")
       .select("answers,skipped")
       .eq("elder_profile_id", elderId)
-      .eq("date", today())
+      .eq("date", todaySeoul())
       .maybeSingle()
       .then(({ data }) => {
         setDoneToday(Boolean(data?.skipped || (Array.isArray(data?.answers) && data.answers.length > 0)));

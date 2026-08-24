@@ -5,6 +5,7 @@ import { RiskDot, RiskPill } from "../components/RiskDot";
 import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import type { RiskLevel } from "../config/riskConstants";
+import { todaySeoul } from "../lib/date";
 
 export const SCREEN_ID = "gList";
 
@@ -63,7 +64,7 @@ export default function GList() {
         // 근거: 실사용 피드백 — "목록에서 한눈에 편하게 볼 수 있으면 좋겠다"
         const ids = rows.map((r) => r.id);
         if (ids.length === 0) return;
-        const today = new Date().toISOString().slice(0, 10);
+        const today = todaySeoul();
         const { data: checkins } = await supabase
           .from("daily_checkin")
           .select("elder_profile_id,skipped")

@@ -8,6 +8,7 @@ import { uploadToBucket, deleteFromBucket } from "../lib/storage";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { RecordingNotice } from "../components/RecordingNotice";
+import { todaySeoul } from "../lib/date";
 
 export const SCREEN_ID = "eSpeech";
 
@@ -55,7 +56,7 @@ export default function ESpeech() {
         .from("daily_checkin")
         .select("id")
         .eq("elder_profile_id", elderId)
-        .eq("date", new Date().toISOString().slice(0, 10))
+        .eq("date", todaySeoul())
         .single();
       if (checkin?.id) {
         // daily_checkin_id는 unique 제약이라 하루에 여러 번 녹음하면 insert가 아니라

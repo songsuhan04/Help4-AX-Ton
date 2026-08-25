@@ -883,3 +883,8 @@
 .g-push-hint--error {
   color: var(--crit-fg);
 }
+
+/* 상세 화면 본문 상단의 "목록으로" — 사이드바에만 두면 눈에 잘 안 띈다 */
+.g-back--inline {
+  margin-bottom: 14px;
+}

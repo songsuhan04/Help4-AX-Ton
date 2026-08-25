@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
-import { BackButton } from "../components/BackButton";
 import { RiskPill } from "../components/RiskDot";
 import { TrendChart, type TrendPoint } from "../components/TrendChart";
 import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
@@ -56,6 +55,8 @@ export default function GDetail() {
   const [letters, setLetters] = useState<LetterRow[]>([]);
   const [myLetters, setMyLetters] = useState<LetterRow[]>([]);
   const [voice, setVoice] = useState<VoiceRow | null>(null);
+  // 음성 조회가 끝났는지 구분 — 로딩 중과 "기록 없음"을 같은 문구로 보여주면 안 된다
+  const [voiceLoaded, setVoiceLoaded] = useState(false);
   const [trend, setTrend] = useState<TrendPoint[]>([]);
   const [streak, setStreak] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -120,7 +121,10 @@ export default function GDetail() {
       .limit(7)
       .then(async ({ data: checkins }) => {
         const ids = (checkins ?? []).map((c) => c.id);
-        if (ids.length === 0) return;
+        if (ids.length === 0) {
+          setVoiceLoaded(true);
+          return;
+        }
         const { data } = await supabase
           .from("voice_response")
           .select("id,audio_url,created_at,transcript,observations,analysis_status")
@@ -128,9 +132,15 @@ export default function GDetail() {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-        if (!data) return;
+        if (!data) {
+          // 안부는 했지만 말하기를 건너뛴 경우 — 보호자가 "왜 아무것도 없지?" 하고
+          // 헤매지 않도록 없다는 사실을 명시한다. 근거: 실사용 피드백
+          setVoiceLoaded(true);
+          return;
+        }
         const signedUrl = await getSignedUrl("voice", data.audio_url).catch(() => undefined);
         setVoice({ ...(data as VoiceRow), signedUrl });
+        setVoiceLoaded(true);
       });
     // 최근 위험도 추이 — 기능설계서.md §1 "꺾은선 그래프 기록"
     const days: string[] = [];
@@ -196,7 +206,9 @@ export default function GDetail() {
         <>
           <div className="g-brand">Callog(콜록)</div>
           <div className="g-aside-actions">
-            <BackButton to="/guardian" />
+            <button className="g-back" onClick={() => navigate("/guardian")}>
+              ← 대상자 목록
+            </button>
           </div>
           <div className="g-aside-foot">
             본 서비스는 의료기기가 아니며, 표시되는 위험도는 참고용 신호입니다.
@@ -204,6 +216,12 @@ export default function GDetail() {
         </>
       }
     >
+      {/* 어르신 상세로 들어온 뒤 목록으로 돌아갈 길이 사이드바에만 있어 눈에 잘 안 띄었다.
+          근거: 실사용 피드백 — "다시 리스트로 가는 버튼이 하나 있으면 좋겠다" */}
+      <button className="g-back g-back--inline" onClick={() => navigate("/guardian")}>
+        ← 대상자 목록으로
+      </button>
+
       <div className="g-toolbar">
         <div>
           <div className="g-header">
@@ -254,6 +272,17 @@ export default function GDetail() {
                 <span>최근 {TREND_DAYS}일 추이</span>
               </div>
               <TrendChart points={trend} />
+            </div>
+          )}
+
+          {voiceLoaded && !voice && (
+            <div className="g-card">
+              <div className="g-card-title">
+                <span>최근 말하기 안부</span>
+              </div>
+              {/* 건너뛴 날에도 "왜 아무것도 없지?" 하고 헤매지 않도록 없다는 사실을 명시.
+                  근거: 실사용 피드백 — "말하기 안부를 건너뛴 날에는 없습니다라고 뜨면 좋겠다" */}
+              <p className="g-sub" style={{ margin: 0 }}>말하기 안부가 없습니다. 어르신이 오늘 말하기를 건너뛰셨어요.</p>
             </div>
           )}
 

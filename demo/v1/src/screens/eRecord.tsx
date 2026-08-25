@@ -22,17 +22,23 @@ export default function ERecord() {
   const [blob, setBlob] = useState<Blob | null>(null);
   const [busy, setBusy] = useState(false);
   const liveRef = useRef<HTMLVideoElement>(null);
-  const previewUrl = useRef<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  // 화면을 벗어날 때만 마지막 URL을 해제한다. [previewUrl] 의존으로 두면 StrictMode의
+  // 이펙트 2회 실행 때 방금 만든 URL이 곧바로 해제되어 개발 중 미리보기가 깨진다.
+  const latestUrl = useRef<string | null>(null);
+  latestUrl.current = previewUrl;
   useEffect(() => {
     return () => {
-      if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
+      if (latestUrl.current) URL.revokeObjectURL(latestUrl.current);
     };
   }, []);
 
   function setBlobAndPreview(next: Blob) {
-    if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
-    previewUrl.current = URL.createObjectURL(next);
+    setPreviewUrl((old) => {
+      if (old) URL.revokeObjectURL(old);
+      return URL.createObjectURL(next);
+    });
     setBlob(next);
     setStage("preview");
   }
@@ -45,6 +51,9 @@ export default function ERecord() {
 
   async function stop() {
     const result = recording ? await recording.stop() : createTestBlob("video");
+    // 카메라 미리보기를 명시적으로 끊는다. srcObject가 남아 있으면 같은 <video>가
+    // 재사용될 때 src보다 우선해서, 방금 찍은 영상 대신 멈춘 카메라 화면이 보인다.
+    if (liveRef.current) liveRef.current.srcObject = null;
     setRecording(null);
     setBlobAndPreview(result);
   }
@@ -90,7 +99,7 @@ export default function ERecord() {
         <h1 className="e-question">하고 싶은 말씀을 하세요</h1>
         <RecordingNotice />
 
-        <video ref={liveRef} autoPlay muted className="e-media e-media--live" />
+        <video key="live" ref={liveRef} autoPlay muted className="e-media e-media--live" />
 
         {!recording && (
           <>
@@ -126,7 +135,7 @@ export default function ERecord() {
         <h1 className="e-question">이렇게 보낼까요?</h1>
         <p className="e-lead">다시 찍으시려면 아래 버튼을 눌러주세요</p>
 
-        {previewUrl.current && <video src={previewUrl.current} controls className="e-media e-media--live" />}
+        {previewUrl && <video key="preview" src={previewUrl} controls autoPlay className="e-media e-media--live" />}
 
         <button className="e-primary" onClick={confirmSend} disabled={busy}>
           {busy ? "보내는 중..." : "이 영상 보내기"}
@@ -146,7 +155,7 @@ export default function ERecord() {
       </div>
       <h1 className="e-question">영상편지를 보냈어요</h1>
 
-      {previewUrl.current && <video src={previewUrl.current} controls className="e-media e-media--live" />}
+      {previewUrl && <video key="sent" src={previewUrl} controls className="e-media e-media--live" />}
 
       <button className="e-primary" onClick={() => navigate("/elder/home")}>
         처음 화면으로

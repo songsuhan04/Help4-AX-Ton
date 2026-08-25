@@ -888,3 +888,19 @@
 .g-back--inline {
   margin-bottom: 14px;
 }
+
+/* 브랜드를 목록으로 돌아가는 링크로 쓴다 — button 기본 스타일을 지우고 g-brand 모양을 유지 */
+.g-brand--link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+@media (min-width: 1024px) {
+  .g-brand--link {
+    padding: 0 8px 14px;
+  }
+}

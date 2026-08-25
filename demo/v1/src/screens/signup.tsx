@@ -85,7 +85,7 @@ export default function Signup() {
         <ConsentItem
           checked={consent}
           onChange={setConsent}
-          label="[필수] 개인정보 수집·이용에 동의합니다"
+          label="(필수) 개인정보 수집·이용에 동의합니다"
           detail={
             <>
               <div>수집 항목: 이메일, 비밀번호(암호화 저장), 어르신 성함·생년월일·관계·전화번호, 안부체크 응답 기록</div>
@@ -98,7 +98,7 @@ export default function Signup() {
         <ConsentItem
           checked={consentOverseas}
           onChange={setConsentOverseas}
-          label="[필수] 개인정보 국외 이전에 동의합니다"
+          label="(필수) 개인정보 국외 이전에 동의합니다"
           detail={
             <>
               <div>수령자: Google LLC (Gemini API)</div>

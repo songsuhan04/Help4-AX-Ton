@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
+import { BrandLink } from "../components/BrandLink";
 import { RiskDot, RiskPill } from "../components/RiskDot";
 import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
 import { PushToggle } from "../components/PushToggle";
@@ -111,7 +112,7 @@ export default function GList() {
     <AppShell
       aside={
         <>
-          <div className="g-brand">Callog(콜록)</div>
+          <BrandLink />
           <div className="g-aside-actions">
             {isAdmin && (
               <button className="g-back" onClick={() => navigate("/admin")}>

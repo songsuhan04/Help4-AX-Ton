@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
+import { BrandLink } from "../components/BrandLink";
 import { BackButton } from "../components/BackButton";
 import { RiskDot, RiskPill } from "../components/RiskDot";
 import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
@@ -92,7 +93,7 @@ export default function GAdmin() {
     <AppShell
       aside={
         <>
-          <div className="g-brand">Callog(콜록)</div>
+          <BrandLink />
           <div className="g-aside-actions">
             <BackButton to="/guardian" />
           </div>

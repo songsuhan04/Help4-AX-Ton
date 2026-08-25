@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
+import { BrandLink } from "../components/BrandLink";
 import { RiskPill } from "../components/RiskDot";
 import { TrendChart, type TrendPoint } from "../components/TrendChart";
 import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
@@ -204,7 +205,7 @@ export default function GDetail() {
     <AppShell
       aside={
         <>
-          <div className="g-brand">Callog(콜록)</div>
+          <BrandLink />
           <div className="g-aside-actions">
             <button className="g-back" onClick={() => navigate("/guardian")}>
               ← 대상자 목록

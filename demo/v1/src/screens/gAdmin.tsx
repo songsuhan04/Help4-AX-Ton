@@ -99,6 +99,7 @@ export default function GAdmin() {
           </div>
           <div className="g-aside-foot">
             전체 가족의 데이터를 읽기 전용으로 봅니다. 수정·삭제는 각 보호자만 할 수 있습니다.
+            <div className="g-build">빌드 {__BUILD_ID__}</div>
           </div>
         </>
       }

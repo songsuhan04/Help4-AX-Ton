@@ -213,6 +213,7 @@ export default function GDetail() {
           </div>
           <div className="g-aside-foot">
             본 서비스는 의료기기가 아니며, 표시되는 위험도는 참고용 신호입니다.
+            <div className="g-build">빌드 {__BUILD_ID__}</div>
           </div>
         </>
       }

@@ -904,3 +904,10 @@
     padding: 0 8px 14px;
   }
 }
+
+/* 지금 보고 있는 화면이 어느 빌드인지 — 캐시된 예전 코드 구분용 */
+.g-build {
+  margin-top: 6px;
+  opacity: 0.55;
+  font-variant-numeric: tabular-nums;
+}

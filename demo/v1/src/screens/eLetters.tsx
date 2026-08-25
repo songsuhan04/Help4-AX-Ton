@@ -4,6 +4,7 @@ import { AppShell } from "../components/AppShell";
 import { DisplaySettings } from "../components/DisplaySettings";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSignedUrl } from "../lib/storage";
+import { VideoDownloadButton } from "../components/VideoDownloadButton";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 
 export const SCREEN_ID = "eLetters";
@@ -79,6 +80,10 @@ export default function ELetters() {
           {letter.signedUrl && (
             <video src={letter.signedUrl} controls className="e-media" onPlay={() => markViewed(letter)} />
           )}
+          <VideoDownloadButton
+            path={letter.video_url}
+            fileName={`가족영상편지-${letter.sent_at.slice(0, 10)}.webm`}
+          />
         </div>
       ))}
     </AppShell>

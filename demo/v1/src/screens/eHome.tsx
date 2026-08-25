@@ -5,8 +5,19 @@ import { SpeakButton } from "../components/SpeakButton";
 import { DisplaySettings } from "../components/DisplaySettings";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
+import { getSignedUrl } from "../lib/storage";
+import { VideoDownloadButton } from "../components/VideoDownloadButton";
 import { todaySeoul } from "../lib/date";
 import { computeStreak } from "../lib/streak";
+
+interface LetterRow {
+  id: string;
+  title: string;
+  video_url: string;
+  sent_at: string;
+  viewed_at: string | null;
+  signedUrl?: string;
+}
 
 export const SCREEN_ID = "eHome";
 
@@ -20,6 +31,7 @@ export default function EHome() {
   const [loading, setLoading] = useState(true);
   const [doneToday, setDoneToday] = useState(false);
   const [streak, setStreak] = useState(0);
+  const [letter, setLetter] = useState<LetterRow | null>(null);
 
   useEffect(() => {
     if (!supabaseConfigured) {
@@ -46,7 +58,31 @@ export default function EHome() {
       .order("date", { ascending: false })
       .limit(400)
       .then(({ data }) => setStreak(computeStreak((data ?? []).map((r) => r.date as string))));
+    // 가장 최근 가족 영상편지를 홈에 바로 띄운다 — 완료 화면만 밋밋하게 두지 않고
+    // 어르신이 별도 화면으로 들어가지 않아도 바로 볼 수 있게.
+    // 근거: 실사용 피드백 — "가족이 보낸 영상편지가 바로 나오면 어떨까"
+    supabase
+      .from("video_letter")
+      .select("id,title,video_url,sent_at,viewed_at")
+      .eq("receiver_type", "elder")
+      .eq("receiver_id", elderId)
+      .order("sent_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(async ({ data }) => {
+        if (!data) return;
+        const signedUrl = await getSignedUrl("letters", data.video_url).catch(() => undefined);
+        setLetter({ ...(data as LetterRow), signedUrl });
+      });
   }, []);
+
+  // 재생하면 "새 편지" 표시가 사라지도록 확인 시각을 남긴다
+  async function markViewed() {
+    if (!letter || letter.viewed_at) return;
+    const viewedAt = new Date().toISOString();
+    await getSupabase().from("video_letter").update({ viewed_at: viewedAt }).eq("id", letter.id);
+    setLetter({ ...letter, viewed_at: viewedAt });
+  }
 
   if (loading) return <AppShell variant="elder"><p className="e-lead">불러오는 중...</p></AppShell>;
 
@@ -64,6 +100,21 @@ export default function EHome() {
       </div>
 
       <SpeakButton text={message} />
+
+      {letter?.signedUrl && (
+        <div className="e-card">
+          <div className="e-card-head">
+            <div className="e-card-label">가족이 보낸 영상편지</div>
+            {!letter.viewed_at && <span className="e-badge-new">새 편지</span>}
+          </div>
+          <div className="e-card-title">{letter.title}</div>
+          <video src={letter.signedUrl} controls className="e-media" onPlay={markViewed} />
+          <VideoDownloadButton
+            path={letter.video_url}
+            fileName={`가족영상편지-${letter.sent_at.slice(0, 10)}.webm`}
+          />
+        </div>
+      )}
 
       {!doneToday && (
         <button className="e-primary" onClick={() => navigate("/elder/check")}>

@@ -911,3 +911,14 @@
   opacity: 0.55;
   font-variant-numeric: tabular-nums;
 }
+
+/* 영상편지 카드의 저장·삭제 버튼을 나란히 */
+.g-letter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.g-letter-actions > * {
+  flex: 1;
+  margin-top: 0;
+}

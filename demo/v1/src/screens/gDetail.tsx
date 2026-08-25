@@ -7,6 +7,7 @@ import { TrendChart, type TrendPoint } from "../components/TrendChart";
 import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getSignedUrl, deleteFromBucket } from "../lib/storage";
+import { VideoDownloadButton } from "../components/VideoDownloadButton";
 import { getRpcErrorMessage } from "../lib/errors";
 import { computeStreak } from "../lib/streak";
 import { shiftDateString, todaySeoul } from "../lib/date";
@@ -329,9 +330,16 @@ export default function GDetail() {
                 <div className="g-timestamp">{new Date(letter.sent_at).toLocaleString("ko-KR")}</div>
                 <div className="g-letter-title">{letter.title}</div>
                 {letter.signedUrl && <video src={letter.signedUrl} controls className="g-media" />}
-                <button className="g-button g-button--danger" onClick={() => deleteLetter(letter, "elder")}>
-                  삭제
-                </button>
+                <div className="g-letter-actions">
+                  <VideoDownloadButton
+                    path={letter.video_url}
+                    fileName={`${elder.name}님-영상편지-${letter.sent_at.slice(0, 10)}.webm`}
+                    className="g-button g-button--secondary"
+                  />
+                  <button className="g-button g-button--danger" onClick={() => deleteLetter(letter, "elder")}>
+                    삭제
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -346,9 +354,16 @@ export default function GDetail() {
                 <div className="g-timestamp">{new Date(letter.sent_at).toLocaleString("ko-KR")}</div>
                 <div className="g-letter-title">{letter.title}</div>
                 {letter.signedUrl && <video src={letter.signedUrl} controls className="g-media" />}
-                <button className="g-button g-button--danger" onClick={() => deleteLetter(letter, "family")}>
-                  삭제
-                </button>
+                <div className="g-letter-actions">
+                  <VideoDownloadButton
+                    path={letter.video_url}
+                    fileName={`내가보낸-영상편지-${letter.sent_at.slice(0, 10)}.webm`}
+                    className="g-button g-button--secondary"
+                  />
+                  <button className="g-button g-button--danger" onClick={() => deleteLetter(letter, "family")}>
+                    삭제
+                  </button>
+                </div>
               </div>
             ))}
           </div>

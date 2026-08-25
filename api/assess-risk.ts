@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const admin = createClient(supabaseUrl, serviceKey);
   try {
-    await assessRisk(admin, elderProfileId, date);
+    await assessRisk(admin, elderProfileId, date, "checkin");
     res.status(200).json({ status: "ok" });
   } catch (err) {
     res.status(200).json({ status: "failed", error: err instanceof Error ? err.message : String(err) });

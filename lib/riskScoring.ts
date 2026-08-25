@@ -30,7 +30,18 @@ function lastNDates(dateStr: string, n: number): string[] {
   return out;
 }
 
-export async function assessRisk(admin: SupabaseClient, elderProfileId: string, date: string): Promise<void> {
+/**
+ * trigger — 이 계산이 어느 시점에 불렸는지.
+ *  "checkin": 어르신이 안부를 마친 직후. 결과가 안전이든 아니든 보호자에게 완료 알림을 보낸다.
+ *  "voice":   음성 분석이 끝난 뒤. 같은 하루에 두 번째로 도는 계산이라, 등급이 나빠진 경우에만 알린다.
+ * 근거: 실사용 피드백 — "설문을 완료할 때도 알림이 뜨고, 결과가 어떤지 보이면 좋겠다"
+ */
+export async function assessRisk(
+  admin: SupabaseClient,
+  elderProfileId: string,
+  date: string,
+  trigger: "checkin" | "voice" = "voice"
+): Promise<void> {
   const [{ data: conditions, error: condErr }, { data: checkin, error: checkinErr }] = await Promise.all([
     admin.from("elder_condition").select("condition_type").eq("elder_profile_id", elderProfileId),
     admin
@@ -153,21 +164,43 @@ export async function assessRisk(admin: SupabaseClient, elderProfileId: string, 
     .eq("id", elderProfileId);
   if (updateErr) console.error("assessRisk: elder_profile update failed", updateErr);
 
-  // 위험/심각으로 새로 올라갔을 때만 보호자에게 알린다. 같은 등급이 유지되는 동안은
-  // 다시 보내지 않아 하루에 같은 알림이 반복되지 않는다.
+  // 안부를 마친 시점에는 결과가 안전이어도 알린다("오늘 무사히 하셨다"는 것 자체가
+  // 보호자가 기다리는 소식이다). 음성 분석 시점에는 하루에 같은 알림이 두 번 가지 않도록
+  // 등급이 실제로 나빠진 경우에만 알린다.
   const worsened = level !== "안전" && level !== previousLevel;
-  if (worsened) {
+  if (trigger === "checkin" || worsened) {
     const { data: elder } = await admin
       .from("elder_profile")
       .select("name")
       .eq("id", elderProfileId)
       .maybeSingle();
     const name = (elder?.name as string | undefined) ?? "어르신";
+
+    const concerns = answers.filter((a) => a?.severity && a.severity !== "ok").length;
+    let title: string;
+    let body: string;
+    if (trigger === "checkin") {
+      if (checkin.skipped) {
+        title = `${name}님 안부 — 건너뜀`;
+        body = "오늘 안부체크를 건너뛰셨어요. 확인이 필요합니다";
+      } else if (concerns === 0) {
+        title = `${name}님 안부 완료 — 안전`;
+        body = `${answers.length}개 문항에 모두 괜찮다고 답하셨어요`;
+      } else {
+        title = `${name}님 안부 완료 — ${level}`;
+        body = `${answers.length}개 문항 중 ${concerns}개에서 확인이 필요해요. ${reason}`;
+      }
+    } else {
+      title = `${name}님 — 확인이 필요합니다`;
+      body = reason;
+    }
+
     await sendPushForElder(admin, elderProfileId, {
-      title: `${name}님 — 확인이 필요합니다`,
-      body: reason,
+      title,
+      body,
       url: `/guardian/elders/${elderProfileId}`,
-      tag: `risk-${elderProfileId}-${date}`,
+      // 완료 알림과 위험 상승 알림은 서로 덮어쓰지 않게 태그를 분리한다
+      tag: `${trigger === "checkin" ? "done" : "risk"}-${elderProfileId}-${date}`,
     });
   }
 }

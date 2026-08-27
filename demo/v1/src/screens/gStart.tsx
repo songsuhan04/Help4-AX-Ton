@@ -81,6 +81,10 @@ export default function GStart() {
           <button className="g-button" type="submit" disabled={loading || !supabaseConfigured}>
             {loading ? "로그인 중..." : "로그인"}
           </button>
+          {/* 비밀번호를 잊으면 들어갈 방법이 전혀 없었다 — 로그인이 안 되면 탈퇴도 못 한다 */}
+          <button type="button" className="g-link g-link--block" onClick={() => navigate("/forgot")}>
+            비밀번호를 잊으셨나요?
+          </button>
           <button type="button" className="g-button g-button--secondary" onClick={() => setMode("choose")}>
             뒤로
           </button>

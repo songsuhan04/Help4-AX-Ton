@@ -4,6 +4,8 @@ import { ElderRoute } from "./guards/ElderRoute";
 
 import GStart from "./screens/gStart";
 import Signup from "./screens/signup";
+import Forgot from "./screens/forgot";
+import Reset from "./screens/reset";
 import Terms from "./screens/terms";
 import Reg from "./screens/reg";
 import Cond from "./screens/cond";
@@ -27,6 +29,8 @@ export function AppRoutes() {
       <Route path="/" element={<GStart />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/terms" element={<Terms />} />
+      <Route path="/forgot" element={<Forgot />} />
+      <Route path="/reset" element={<Reset />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/e/:token" element={<EInvited />} />
 

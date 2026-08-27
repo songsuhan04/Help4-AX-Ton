@@ -71,7 +71,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           contents: [
             {
               parts: [
-                { text: "이 음성은 독거 어르신의 안부 응답입니다. 발화 속도, 침묵 비율, 전반적인 소견을 한국어로 간단히 분석해 JSON으로 답하세요. 형식: {\"transcript\": string, \"speech_rate_wpm\": number|null, \"silence_ratio\": number|null, \"observations\": string}" },
+                {
+                  // 안 들리는 부분을 그럴듯하게 지어내지 않도록 명시적으로 막는다.
+                  // 실사용에서 주변 대화가 섞인 녹음을 어르신 본인의 말처럼 받아쓴 사례가 있었다.
+                  text:
+                    "이 음성은 독거 어르신의 안부 응답입니다. 아래 규칙을 지켜 한국어로 분석하고 JSON으로만 답하세요.\n" +
+                    "1. transcript에는 실제로 명확히 들린 말만 적으세요. 추측하거나 문맥으로 보완하지 마세요.\n" +
+                    "2. 들리지 않거나 알아들을 수 없으면 그 부분을 적지 말고 (불명확)으로 표시하세요.\n" +
+                    "3. 발화가 전혀 없으면 transcript는 \"(발화 없음)\"으로만 하세요.\n" +
+                    "4. 말소리가 여러 사람이거나 TV·주변 대화로 보이면 observations에 반드시 그 사실을 적으세요.\n" +
+                    "5. speech_rate_wpm과 silence_ratio는 확신이 없으면 null로 두세요.\n" +
+                    "형식: {\"transcript\": string, \"speech_rate_wpm\": number|null, \"silence_ratio\": number|null, \"observations\": string}",
+                },
                 { inline_data: { mime_type: "audio/webm", data: audioBuffer.toString("base64") } },
               ],
             },

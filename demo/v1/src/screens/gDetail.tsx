@@ -41,6 +41,8 @@ interface LetterRow {
 
 interface VoiceRow {
   id: string;
+  /** 이 녹음이 어느 날짜의 안부인지 — 오늘 것인지 구분해 보여주기 위해 필요하다 */
+  checkinDate: string;
   audio_url: string;
   created_at: string;
   transcript: string | null;
@@ -114,23 +116,27 @@ export default function GDetail() {
       );
       setMyLetters(withUrls);
     });
-    // 최근 말하기 안부 음성 — 보호자도 직접 들을 수 있어야 함
+    // 최근 말하기 안부 음성 — 보호자도 직접 들을 수 있어야 함.
+    // 어느 날짜의 녹음인지 함께 가져온다. 오늘 녹음이 없으면 예전 녹음이 잡히는데,
+    // 그걸 "최근 말하기 안부"로만 보여주면 보호자가 오늘 것으로 오해한다
+    // (실제로 "녹음한 적 없는데 내용이 뜬다"는 신고가 있었고, 사흘 전 녹음이었다).
     supabase
       .from("daily_checkin")
-      .select("id")
+      .select("id,date")
       .eq("elder_profile_id", elderId)
       .order("date", { ascending: false })
       .limit(7)
       .then(async ({ data: checkins }) => {
-        const ids = (checkins ?? []).map((c) => c.id);
-        if (ids.length === 0) {
+        const rows = checkins ?? [];
+        if (rows.length === 0) {
           setVoiceLoaded(true);
           return;
         }
+        const dateById = new Map(rows.map((c) => [c.id as string, c.date as string]));
         const { data } = await supabase
           .from("voice_response")
-          .select("id,audio_url,created_at,transcript,observations,analysis_status")
-          .in("daily_checkin_id", ids)
+          .select("id,daily_checkin_id,audio_url,created_at,transcript,observations,analysis_status")
+          .in("daily_checkin_id", [...dateById.keys()])
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -141,7 +147,16 @@ export default function GDetail() {
           return;
         }
         const signedUrl = await getSignedUrl("voice", data.audio_url).catch(() => undefined);
-        setVoice({ ...(data as VoiceRow), signedUrl });
+        setVoice({
+          id: data.id as string,
+          checkinDate: dateById.get(data.daily_checkin_id as string) ?? "",
+          audio_url: data.audio_url as string,
+          created_at: data.created_at as string,
+          transcript: (data.transcript as string | null) ?? null,
+          observations: (data.observations as string | null) ?? null,
+          analysis_status: data.analysis_status as string,
+          signedUrl,
+        });
         setVoiceLoaded(true);
       });
     // 최근 위험도 추이 — 기능설계서.md §1 "꺾은선 그래프 기록"
@@ -287,7 +302,7 @@ export default function GDetail() {
           {voiceLoaded && !voice && (
             <div className="g-card">
               <div className="g-card-title">
-                <span>최근 말하기 안부</span>
+                <span>말하기 안부</span>
               </div>
               {/* 건너뛴 날에도 "왜 아무것도 없지?" 하고 헤매지 않도록 없다는 사실을 명시.
                   근거: 실사용 피드백 — "말하기 안부를 건너뛴 날에는 없습니다라고 뜨면 좋겠다" */}
@@ -298,8 +313,15 @@ export default function GDetail() {
           {voice?.signedUrl && (
             <div className="g-card">
               <div className="g-card-title">
-                <span>최근 말하기 안부</span>
+                <span>{voice.checkinDate === todaySeoul() ? "오늘 말하기 안부" : "지난 말하기 안부"}</span>
               </div>
+              {/* 오늘 녹음이 없으면 예전 녹음이 잡히는데, 날짜를 분명히 하지 않으면
+                  보호자가 오늘 것으로 오해한다. 근거: 실사용 피드백 */}
+              {voice.checkinDate !== todaySeoul() && (
+                <p className="g-sub" style={{ margin: "0 0 8px" }}>
+                  오늘은 말하기 안부가 없어요. 아래는 가장 최근 기록입니다.
+                </p>
+              )}
               <div className="g-timestamp">{new Date(voice.created_at).toLocaleString("ko-KR")}</div>
               <audio src={voice.signedUrl} controls style={{ width: "100%" }} />
               {voice.analysis_status === "failed" && (
@@ -309,8 +331,13 @@ export default function GDetail() {
                 <div className="g-note">
                   {voice.transcript && (
                     <div>
-                      <span className="g-note-label">말씀 내용</span>
+                      {/* AI가 받아쓴 결과라 틀릴 수 있다("말씀 내용"이라고만 하면 사실처럼 읽힌다).
+                          주변 대화가 섞여 들어오는 경우도 있어 직접 들어보도록 안내한다. */}
+                      <span className="g-note-label">AI가 받아쓴 내용</span>
                       {voice.transcript}
+                      <div className="g-legal" style={{ marginTop: 4 }}>
+                        정확하지 않을 수 있어요. 위 음성을 직접 들어보고 확인해주세요.
+                      </div>
                     </div>
                   )}
                   {voice.observations && (

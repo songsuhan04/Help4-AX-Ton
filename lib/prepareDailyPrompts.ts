@@ -16,12 +16,17 @@ import { generateTopics } from "./dailyTopic";
 const MAX_ELDERS_PER_RUN = 200;
 // 개인화에 참고할 최근 안부 답변 수
 const RECENT_ANSWER_LIMIT = 8;
+// 지난 주제를 며칠치까지 남겨둘지. 주제 반복을 피하려면 최근 며칠만 알면 되고, 그 이상은
+// 하루하루 쌓이기만 한다(어르신 1명당 매일 1행). 영상편지에 7일 보관을 둔 것과 같은 이유로
+// 여기도 상한을 둔다 — 지병·안부 답변에서 뽑아낸 문장이라 오래 들고 있을 이유가 없다.
+const PROMPT_RETENTION_DAYS = 14;
 
 export interface PrepareResult {
   prepared: number;
   skipped: number;
   gemini: number;
   fallback: number;
+  pruned: number;
 }
 
 /**
@@ -32,7 +37,20 @@ export async function prepareDailyPrompts(
   date: string,
   geminiKey: string | undefined
 ): Promise<PrepareResult> {
-  const result: PrepareResult = { prepared: 0, skipped: 0, gemini: 0, fallback: 0 };
+  const result: PrepareResult = { prepared: 0, skipped: 0, gemini: 0, fallback: 0, pruned: 0 };
+
+  // 오래된 주제를 먼저 지운다. 실패해도 생성은 계속한다 — 정리 못 한 것이 오늘 안부를
+  // 막을 이유는 없다.
+  const cutoff = new Date(Date.parse(`${date}T00:00:00Z`) - PROMPT_RETENTION_DAYS * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  const { data: pruned, error: pruneError } = await admin
+    .from("daily_prompt")
+    .delete()
+    .lt("date", cutoff)
+    .select("date");
+  if (pruneError) console.error("prepareDailyPrompts: prune failed", pruneError.message);
+  else result.pruned = pruned?.length ?? 0;
 
   const { data: elders, error } = await admin
     .from("elder_profile")

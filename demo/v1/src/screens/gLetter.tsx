@@ -6,10 +6,10 @@ import { createTestBlob, startRecording, type RecordingHandle } from "../lib/rec
 import { uploadToBucket } from "../lib/storage";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getErrorMessage } from "../lib/errors";
+import { FAMILY_LETTER_TOPICS, pickDailyTopic } from "../lib/topics";
+import { todaySeoul } from "../lib/date";
 
 export const SCREEN_ID = "gLetter";
-
-const TOPICS = ["이번 주말 계획을 말해주세요", "요즘 있었던 즐거운 일을 알려주세요", "고마웠던 순간을 이야기해주세요"];
 
 // 촬영 → 확인(재생·다시 찍기) → 전송. 어르신 화면(eRecord)과 같은 흐름으로 맞췄다.
 // 근거: 실사용 피드백 — "보호자 화면에서 찍은 영상이 바로 안 보이고 다시 찍기가 없다"
@@ -18,7 +18,8 @@ type Stage = "record" | "preview";
 export default function GLetter() {
   const { elderId } = useParams<{ elderId: string }>();
   const navigate = useNavigate();
-  const [topic] = useState(() => TOPICS[Math.floor(Math.random() * TOPICS.length)]);
+  // 어르신 id를 함께 넘겨 여러 어르신에게 같은 날 같은 주제가 가지 않게 한다
+  const [topic] = useState(() => pickDailyTopic(FAMILY_LETTER_TOPICS, todaySeoul(), elderId ?? ""));
   const [stage, setStage] = useState<Stage>("record");
   const [title, setTitle] = useState("");
   const [recording, setRecording] = useState<RecordingHandle | null>(null);

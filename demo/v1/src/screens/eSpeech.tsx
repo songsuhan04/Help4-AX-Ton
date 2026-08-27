@@ -9,23 +9,15 @@ import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { RecordingNotice } from "../components/RecordingNotice";
 import { todaySeoul } from "../lib/date";
+import { SPEECH_TOPICS, pickDailyTopic } from "../lib/topics";
 
 export const SCREEN_ID = "eSpeech";
 
-// 매번 같은 질문만 나오면 심심하니 주제를 여러 개 두고 무작위로 골라 던져준다.
-// 근거: 실사용 피드백 — "음성 녹음할 때 주제를 던져주면 좋을 것 같다"
-const TOPICS = [
-  "가족에게 한마디 해주세요",
-  "오늘 하루는 어떠셨어요? 편하게 말씀해주세요",
-  "요즘 있었던 즐거운 일을 이야기해주세요",
-  "오늘 드신 음식 중에 뭐가 제일 맛있었어요?",
-  "요즘 몸은 좀 어떠신지 말씀해주세요",
-  "옛날 이야기 하나 들려주세요",
-];
 
 export default function ESpeech() {
   const navigate = useNavigate();
-  const [topic] = useState(() => TOPICS[Math.floor(Math.random() * TOPICS.length)]);
+  // 하루에 하나로 고정한다 — 화면을 다시 열어도 질문이 바뀌지 않아야 혼란이 없다
+  const [topic] = useState(() => pickDailyTopic(SPEECH_TOPICS, todaySeoul()));
   const [recording, setRecording] = useState<RecordingHandle | null>(null);
   const [busy, setBusy] = useState(false);
   const startedAt = useState(() => Date.now())[0];

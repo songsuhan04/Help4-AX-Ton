@@ -8,6 +8,8 @@ import { uploadToBucket } from "../lib/storage";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { RecordingNotice } from "../components/RecordingNotice";
+import { ELDER_LETTER_TOPICS, pickDailyTopic } from "../lib/topics";
+import { todaySeoul } from "../lib/date";
 
 export const SCREEN_ID = "eRecord";
 
@@ -18,6 +20,9 @@ type Stage = "record" | "preview" | "sent";
 export default function ERecord() {
   const navigate = useNavigate();
   const [stage, setStage] = useState<Stage>("record");
+  // 말하기 안부와 같이 주제를 던져준다 — "하고 싶은 말씀을 하세요"만 있으면 막막해서
+  // 무슨 말을 해야 할지 모른다. 근거: 실사용 피드백
+  const [topic] = useState(() => pickDailyTopic(ELDER_LETTER_TOPICS, todaySeoul()));
   const [recording, setRecording] = useState<RecordingHandle | null>(null);
   const [blob, setBlob] = useState<Blob | null>(null);
   const [busy, setBusy] = useState(false);
@@ -92,11 +97,13 @@ export default function ERecord() {
     return (
       <AppShell variant="elder">
         <div className="e-topbar">
-          <SpeakButton text="하고 싶은 말씀을 하세요" />
+          <SpeakButton text={topic} />
           <DisplaySettings />
           <span className="e-brand">영상편지</span>
         </div>
-        <h1 className="e-question">하고 싶은 말씀을 하세요</h1>
+        <h1 className="e-question">{topic}</h1>
+        {/* 주제는 어디까지나 권유다 — 다른 말을 하고 싶은 분을 막아서는 안 된다 */}
+        <p className="e-lead">다른 하고 싶은 말씀이 있으면 그것을 하셔도 됩니다</p>
         <RecordingNotice />
 
         <video key="live" ref={liveRef} autoPlay muted className="e-media e-media--live" />

@@ -4,6 +4,7 @@ import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getErrorMessage } from "../lib/errors";
+import { assertWritten } from "../lib/write";
 import { formatPhone } from "../lib/phone";
 
 export const SCREEN_ID = "reg";
@@ -61,7 +62,9 @@ export default function Reg() {
     try {
       const supabase = getSupabase();
       if (isEdit) {
-        const { error } = await supabase
+        // .select()가 없으면 RLS로 0건이 되어도 에러가 아니라 성공으로 돌아온다 — 그러면
+        // 이름을 바꿔도 아무 일이 없는데 화면만 넘어간다. 바뀐 행을 직접 확인한다.
+        const { data, error } = await supabase
           .from("elder_profile")
           .update({
             name,
@@ -71,8 +74,10 @@ export default function Reg() {
             phone: phone || null,
             checkin_time: checkinTime,
           })
-          .eq("id", elderId);
+          .eq("id", elderId)
+          .select("id");
         if (error) throw error;
+        assertWritten(data, "이 어르신의 정보를 수정할");
         navigate(`/guardian/elders/${elderId}`);
         return;
       }

@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
-import { getStoredElderProfileId, touchElderDevice } from "../lib/elderSession";
+import { clearStoredElderProfileId, getStoredElderProfileId, touchElderDevice } from "../lib/elderSession";
 import { supabaseConfigured } from "../lib/supabase";
 
 export function ElderRoute({ children }: { children: ReactNode }) {
@@ -19,7 +19,11 @@ export function ElderRoute({ children }: { children: ReactNode }) {
       setStatus("denied");
       return;
     }
-    touchElderDevice().then((ok) => setStatus(ok ? "ok" : "denied"));
+    touchElderDevice().then((ok) => {
+      // 연결이 끊긴 뒤에도 남아 있는 값을 지워둬야 다음 방문에서 곧바로 걸러진다
+      if (!ok) clearStoredElderProfileId();
+      setStatus(ok ? "ok" : "denied");
+    });
   }, []);
 
   if (status === "checking") return null;

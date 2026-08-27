@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
+import { PasswordField } from "../components/PasswordField";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getErrorMessage } from "../lib/errors";
 
@@ -65,10 +66,13 @@ export default function GStart() {
             <label>이메일</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={!supabaseConfigured} />
           </div>
-          <div className="g-field">
-            <label>비밀번호</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={!supabaseConfigured} />
-          </div>
+          <PasswordField
+            label="비밀번호"
+            value={password}
+            onChange={setPassword}
+            disabled={!supabaseConfigured}
+            autoComplete="current-password"
+          />
           <label className="g-check" style={{ marginBottom: 16 }}>
             <input type="checkbox" checked={autoLogin} onChange={(e) => toggleAutoLogin(e.target.checked)} />
             로그인 상태 유지

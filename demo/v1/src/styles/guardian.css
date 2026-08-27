@@ -928,3 +928,27 @@
   color: var(--crit-fg);
   border-color: var(--crit-fg);
 }
+
+/* 비밀번호 입력 + 보기/숨기기 — 토글이 입력칸 오른쪽 안쪽에 앉는다 */
+.g-password {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.g-password input {
+  /* 토글 버튼 자리를 비워둔다 */
+  padding-right: 72px;
+}
+
+.g-password-toggle {
+  position: absolute;
+  right: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  color: var(--text-2);
+  font-size: calc(12.5px * var(--font-scale));
+  font-weight: 700;
+  padding: 6px 10px;
+}

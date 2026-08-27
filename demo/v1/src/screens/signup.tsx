@@ -5,6 +5,7 @@ import { BackButton } from "../components/BackButton";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getErrorMessage } from "../lib/errors";
 import { ConsentItem } from "../components/ConsentItem";
+import { PasswordField } from "../components/PasswordField";
 
 export const SCREEN_ID = "signup";
 
@@ -33,9 +34,18 @@ export default function Signup() {
     try {
       const { data, error } = await getSupabase().auth.signUp({ email, password });
       if (error) throw error;
+
+      // 이미 가입된 이메일이면 Supabase가 이메일 존재 여부를 숨기려고 에러 대신
+      // identities가 빈 사용자를 돌려준다. 예전에는 이 경우 아무 말 없이 로그인 화면으로
+      // 보내서 "가입이 안 된다"로만 보였다. 근거: 실사용 피드백
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        setError("이미 가입된 이메일입니다. 로그인해주세요.");
+        return;
+      }
+
       if (!data.session) {
-        // "Confirm email"이 켜져 있는 환경이라면 세션이 바로 생기지 않는다 — 로그인 화면으로 안내
-        navigate("/");
+        // "Confirm email"이 켜져 있는 환경이라면 세션이 바로 생기지 않는다
+        setError("가입 확인이 필요합니다. 로그인 화면에서 로그인해주세요.");
         return;
       }
       navigate("/guardian/elders/new", { state: { fromSignup: true } });
@@ -56,27 +66,21 @@ export default function Signup() {
           <label>이메일</label>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={!supabaseConfigured} />
         </div>
-        <div className="g-field">
-          <label>비밀번호</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={8}
-            disabled={!supabaseConfigured}
-          />
-        </div>
-        <div className="g-field">
-          <label>비밀번호 확인</label>
-          <input
-            type="password"
-            value={passwordConfirm}
-            onChange={(e) => setPasswordConfirm(e.target.value)}
-            required
-            disabled={!supabaseConfigured}
-          />
-        </div>
+        <PasswordField
+          label="비밀번호"
+          value={password}
+          onChange={setPassword}
+          minLength={8}
+          disabled={!supabaseConfigured}
+          autoComplete="new-password"
+        />
+        <PasswordField
+          label="비밀번호 확인"
+          value={passwordConfirm}
+          onChange={setPasswordConfirm}
+          disabled={!supabaseConfigured}
+          autoComplete="new-password"
+        />
         <a href="/terms" target="_blank" rel="noreferrer" className="g-link" style={{ marginBottom: 10 }}>
           이용약관 및 개인정보 처리 안내 보기
         </a>

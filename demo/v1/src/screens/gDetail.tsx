@@ -260,6 +260,12 @@ export default function GDetail() {
         >
           영상편지 보내기
         </button>
+        <button
+          className="g-button g-button--secondary"
+          onClick={() => navigate(`/guardian/elders/${elderId}/conditions`, { state: { mode: "edit" } })}
+        >
+          지병 수정
+        </button>
         <button className="g-button g-button--secondary" onClick={reinvite} disabled={busy}>
           재초대 (기기 변경 시)
         </button>

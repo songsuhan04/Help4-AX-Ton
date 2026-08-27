@@ -21,3 +21,27 @@ export function getRpcErrorMessage(err: unknown, fallback: string): string {
   const message = getErrorMessage(err, fallback);
   return RPC_ERROR_MESSAGES[message] ?? message;
 }
+
+// Supabase Auth는 영어 원문 메시지를 준다("Invalid login credentials", "User already
+// registered" 등). 그대로 띄우면 무엇을 해야 하는지 알 수 없어서 한국어로 바꾼다.
+// 실제 인증 로그에서 사용자가 부딪힌 것들을 우선 담았다.
+// 문구가 버전마다 조금씩 달라질 수 있어 정확히 일치가 아니라 포함 여부로 판단한다.
+const AUTH_ERROR_PATTERNS: [RegExp, string][] = [
+  [/invalid login credentials/i, "이메일 또는 비밀번호가 올바르지 않습니다."],
+  [/user already registered|already been registered/i, "이미 가입된 이메일입니다. 로그인해주세요."],
+  [/password should be at least/i, "비밀번호가 너무 짧습니다. 8자 이상으로 입력해주세요."],
+  [/new password should be different/i, "이전과 다른 비밀번호로 정해주세요."],
+  [/email rate limit exceeded|over_email_send_rate_limit/i, "메일 발송이 잠시 제한되었습니다. 잠시 후 다시 시도해주세요."],
+  [/you can only request this after/i, "잠시 후 다시 시도해주세요."],
+  [/unable to validate email address|invalid format/i, "이메일 형식이 올바르지 않습니다."],
+  [/email not confirmed/i, "이메일 확인이 완료되지 않았습니다."],
+  [/token has expired|invalid or has expired/i, "링크가 만료되었습니다. 재설정 메일을 다시 요청해주세요."],
+];
+
+export function getAuthErrorMessage(err: unknown, fallback: string): string {
+  const message = getErrorMessage(err, fallback);
+  for (const [pattern, korean] of AUTH_ERROR_PATTERNS) {
+    if (pattern.test(message)) return korean;
+  }
+  return message;
+}

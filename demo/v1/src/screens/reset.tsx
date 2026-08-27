@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { PasswordField } from "../components/PasswordField";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
-import { getErrorMessage } from "../lib/errors";
+import { getAuthErrorMessage } from "../lib/errors";
 
 export const SCREEN_ID = "reset";
 
@@ -56,7 +56,7 @@ export default function Reset() {
       if (error) throw error;
       setDone(true);
     } catch (err) {
-      setError(getErrorMessage(err, "비밀번호를 바꾸지 못했습니다"));
+      setError(getAuthErrorMessage(err, "비밀번호를 바꾸지 못했습니다"));
     } finally {
       setLoading(false);
     }

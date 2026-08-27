@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
-import { getErrorMessage } from "../lib/errors";
+import { getAuthErrorMessage } from "../lib/errors";
 import { ConsentItem } from "../components/ConsentItem";
 import { PasswordField } from "../components/PasswordField";
 
@@ -50,7 +50,7 @@ export default function Signup() {
       }
       navigate("/guardian/elders/new", { state: { fromSignup: true } });
     } catch (err) {
-      setError(getErrorMessage(err, "가입에 실패했습니다"));
+      setError(getAuthErrorMessage(err, "가입에 실패했습니다"));
     } finally {
       setLoading(false);
     }

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
-import { getErrorMessage } from "../lib/errors";
+import { getAuthErrorMessage } from "../lib/errors";
 
 export const SCREEN_ID = "forgot";
 
@@ -30,7 +30,7 @@ export default function Forgot() {
       // 그래서 안내 문구도 "가입된 이메일이라면"으로 적는다.
       setSent(true);
     } catch (err) {
-      setError(getErrorMessage(err, "메일 발송에 실패했습니다"));
+      setError(getAuthErrorMessage(err, "메일 발송에 실패했습니다"));
     } finally {
       setLoading(false);
     }

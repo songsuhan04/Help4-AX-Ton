@@ -922,3 +922,9 @@
   flex: 1;
   margin-top: 0;
 }
+
+/* 회원 탈퇴 — 되돌릴 수 없는 동작이라 로그아웃과 시각적으로 구분한다 */
+.g-back--danger {
+  color: var(--crit-fg);
+  border-color: var(--crit-fg);
+}

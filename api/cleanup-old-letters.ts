@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 // 영상편지가 계속 쌓이면 스토리지 용량이 무한정 늘어나므로 일정 기간이 지난 영상은
 // 자동으로 정리한다. 근거: 실사용 피드백 — "1주일치만 저장되고 지나면 자동 삭제되게 하자"
@@ -7,6 +7,39 @@ import { createClient } from "@supabase/supabase-js";
 const RETENTION_DAYS = 7;
 // 한 번 실행에서 처리할 최대 건수 — 크론이 오래 밀렸다가 재개되는 경우를 대비한 안전장치
 const MAX_PER_RUN = 500;
+
+/**
+ * 주인이 사라진 스토리지 파일을 청소한다.
+ *
+ * 스토리지 파일은 DB의 cascade로 지워지지 않아, 어르신을 삭제하면 음성·영상 파일만
+ * 남는다(실제로 삭제된 어르신의 녹음 파일이 남아 있는 것을 확인했다). 약관에 "보유 기간:
+ * 어르신 등록 해제 시까지"라고 써놓은 것과 어긋나므로 주기적으로 쓸어낸다.
+ * 파일 경로 규칙이 <elder_profile_id>/<날짜>/<uuid> 라서 최상위 폴더 이름을 어르신 id로 보고
+ * 대조하면 된다.
+ */
+async function sweepOrphanFiles(admin: SupabaseClient): Promise<number> {
+  const { data: elders } = await admin.from("elder_profile").select("id");
+  const alive = new Set((elders ?? []).map((e) => e.id as string));
+
+  let removed = 0;
+  for (const bucket of ["voice", "letters"] as const) {
+    const { data: topDirs } = await admin.storage.from(bucket).list("", { limit: 1000 });
+    for (const dir of topDirs ?? []) {
+      if (alive.has(dir.name)) continue; // 아직 있는 어르신 — 건드리지 않는다
+      const paths: string[] = [];
+      const { data: dateDirs } = await admin.storage.from(bucket).list(dir.name, { limit: 1000 });
+      for (const d of dateDirs ?? []) {
+        const { data: files } = await admin.storage.from(bucket).list(`${dir.name}/${d.name}`, { limit: 1000 });
+        for (const f of files ?? []) paths.push(`${dir.name}/${d.name}/${f.name}`);
+      }
+      if (paths.length === 0) continue;
+      const { error } = await admin.storage.from(bucket).remove(paths);
+      if (error) console.error("sweepOrphanFiles: remove failed", bucket, error.message);
+      else removed += paths.length;
+    }
+  }
+  return removed;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const cronSecret = process.env.CRON_SECRET;
@@ -42,5 +75,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!delErr) deleted++;
   }
 
-  res.status(200).json({ status: "ok", checked: rows?.length ?? 0, deleted });
+  // 삭제된 어르신이 남긴 파일도 함께 정리한다
+  const orphansRemoved = await sweepOrphanFiles(admin);
+
+  res.status(200).json({ status: "ok", checked: rows?.length ?? 0, deleted, orphansRemoved });
 }

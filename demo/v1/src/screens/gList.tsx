@@ -6,6 +6,7 @@ import { RiskDot, RiskPill } from "../components/RiskDot";
 import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
 import { PushToggle } from "../components/PushToggle";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
+import { getErrorMessage } from "../lib/errors";
 import type { RiskLevel } from "../config/riskConstants";
 import { todaySeoul } from "../lib/date";
 
@@ -41,6 +42,7 @@ export default function GList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     if (!supabaseConfigured) {
@@ -86,6 +88,40 @@ export default function GList() {
     navigate("/");
   }
 
+  // 회원 탈퇴 — 약관에 "보유 기간: 회원 탈퇴 시까지"라고 써놓고 정작 탈퇴 수단이 없었다.
+  // 되돌릴 수 없고 어르신 기록까지 전부 사라지므로 이메일을 직접 입력해 확인받는다.
+  async function deleteAccount() {
+    const supabase = getSupabase();
+    const { data: userData } = await supabase.auth.getUser();
+    const email = userData.user?.email ?? "";
+    const typed = window.prompt(
+      `정말 탈퇴하시겠어요?\n\n등록한 어르신 ${elders.length}명의 안부 기록·음성·영상편지가 모두 삭제되며 되돌릴 수 없습니다.\n\n확인을 위해 이메일을 그대로 입력해주세요:\n${email}`
+    );
+    if (typed === null) return;
+    if (typed.trim() !== email) {
+      setError("이메일이 일치하지 않아 탈퇴를 취소했습니다.");
+      return;
+    }
+    setDeletingAccount(true);
+    setError(null);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("로그인이 필요합니다");
+      const resp = await fetch("/api/delete-account", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await resp.json();
+      if (json.status !== "ok") throw new Error(json.error ?? "탈퇴에 실패했습니다");
+      await supabase.auth.signOut();
+      navigate("/");
+    } catch (err) {
+      setError(getErrorMessage(err, "탈퇴에 실패했습니다"));
+      setDeletingAccount(false);
+    }
+  }
+
   async function deleteElder(elder: ElderRow) {
     if (!window.confirm(`${elder.name}님을 목록에서 삭제할까요? 관련된 안부 기록·영상편지·위험도 이력이 모두 함께 삭제되며 되돌릴 수 없습니다.`)) return;
     const { error } = await getSupabase().from("elder_profile").delete().eq("id", elder.id);
@@ -121,6 +157,9 @@ export default function GList() {
             )}
             <button className="g-back" onClick={logout}>
               로그아웃
+            </button>
+            <button className="g-back g-back--danger" onClick={deleteAccount} disabled={deletingAccount}>
+              {deletingAccount ? "탈퇴 처리 중..." : "회원 탈퇴"}
             </button>
             <PushToggle />
           </div>

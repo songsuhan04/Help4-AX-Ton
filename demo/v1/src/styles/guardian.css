@@ -973,3 +973,16 @@ button.g-link {
   font-weight: 700;
   padding: 6px 10px;
 }
+
+/* 에러 아래에 붙는 "다음에 할 일" 버튼 묶음 — 좁은 화면에서는 위아래로 쌓인다 */
+.g-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.g-inline-actions .g-button {
+  flex: 1 1 180px;
+  margin: 0;
+}

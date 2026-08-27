@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
-import { getAuthErrorMessage } from "../lib/errors";
+import { getAuthErrorMessage, isEmailTakenError } from "../lib/errors";
 import { ConsentItem } from "../components/ConsentItem";
 import { PasswordField } from "../components/PasswordField";
 
@@ -21,11 +21,14 @@ export default function Signup() {
   const [consent, setConsent] = useState(false);
   const [consentOverseas, setConsentOverseas] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 이미 가입된 이메일일 때는 문구만 띄우면 막다른 길이 된다 — 다음에 할 일을 버튼으로 준다
+  const [emailTaken, setEmailTaken] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setEmailTaken(false);
     if (password !== passwordConfirm) {
       setError("비밀번호가 서로 다릅니다");
       return;
@@ -39,7 +42,8 @@ export default function Signup() {
       // identities가 빈 사용자를 돌려준다. 예전에는 이 경우 아무 말 없이 로그인 화면으로
       // 보내서 "가입이 안 된다"로만 보였다. 근거: 실사용 피드백
       if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-        setError("이미 가입된 이메일입니다. 로그인해주세요.");
+        setError("이미 가입된 이메일입니다.");
+        setEmailTaken(true);
         return;
       }
 
@@ -50,6 +54,8 @@ export default function Signup() {
       }
       navigate("/guardian/elders/new", { state: { fromSignup: true } });
     } catch (err) {
+      // 실제로 오는 경로는 422 에러다(인증 로그로 확인). 위의 identities 검사만으로는 안 잡힌다.
+      if (isEmailTakenError(err)) setEmailTaken(true);
       setError(getAuthErrorMessage(err, "가입에 실패했습니다"));
     } finally {
       setLoading(false);
@@ -115,6 +121,25 @@ export default function Signup() {
           }
         />
         {error && <p className="g-error">{error}</p>}
+        {/* 비밀번호를 잊어 새로 가입하려는 경우가 많다. 문구만 띄우면 여기서 길이 끊긴다. */}
+        {emailTaken && (
+          <div className="g-inline-actions">
+            <button
+              type="button"
+              className="g-button g-button--secondary"
+              onClick={() => navigate("/", { state: { login: true } })}
+            >
+              이 이메일로 로그인하기
+            </button>
+            <button
+              type="button"
+              className="g-button g-button--secondary"
+              onClick={() => navigate("/forgot")}
+            >
+              비밀번호 재설정하기
+            </button>
+          </div>
+        )}
         <button className="g-button" type="submit" disabled={loading || !consent || !consentOverseas || !supabaseConfigured}>
           {loading ? "가입 중..." : "다음 — 어르신 정보"}
         </button>

@@ -221,12 +221,11 @@ export default function GDetail() {
     <AppShell
       aside={
         <>
+          {/* 사이드바에는 목록으로 가는 버튼을 두지 않는다. 1024px 아래에서 사이드바는
+              가로 막대로 바뀌어 본문 위에 붙는데, 그러면 아래 g-back--inline과 나란히
+              똑같은 버튼이 두 개 보였다. 좁은 화면에서 잘 보이는 본문 쪽만 남긴다.
+              (BrandLink 자체가 목록으로 가는 링크이기도 하다) */}
           <BrandLink />
-          <div className="g-aside-actions">
-            <button className="g-back" onClick={() => navigate("/guardian")}>
-              ← 대상자 목록
-            </button>
-          </div>
           <div className="g-aside-foot">
             본 서비스는 의료기기가 아니며, 표시되는 위험도는 참고용 신호입니다.
             <div className="g-build">빌드 {__BUILD_ID__}</div>

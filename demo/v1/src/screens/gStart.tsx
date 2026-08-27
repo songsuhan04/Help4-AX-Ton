@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { PasswordField } from "../components/PasswordField";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
@@ -9,7 +9,11 @@ export const SCREEN_ID = "gStart";
 
 export default function GStart() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"choose" | "login">("choose");
+  const location = useLocation();
+  // 가입 화면에서 "이미 가입된 이메일"을 만나 넘어온 경우엔 곧바로 로그인 폼을 연다
+  const [mode, setMode] = useState<"choose" | "login">(
+    (location.state as { login?: boolean } | null)?.login ? "login" : "choose"
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [autoLogin, setAutoLogin] = useState(() => window.localStorage.getItem("callog.autoLogin") !== "false");

@@ -38,6 +38,13 @@ const AUTH_ERROR_PATTERNS: [RegExp, string][] = [
   [/token has expired|invalid or has expired/i, "링크가 만료되었습니다. 재설정 메일을 다시 요청해주세요."],
 ];
 
+// "이미 가입된 이메일"은 두 경로로 온다 — 422 User already registered 에러와, 이메일 존재
+// 여부를 숨기려고 identities를 비워서 돌려주는 성공 응답. 사용자가 할 일은 어느 쪽이든
+// 같으므로(로그인하거나 비밀번호를 재설정하거나) 판단을 한 곳에 모아둔다.
+export function isEmailTakenError(err: unknown): boolean {
+  return /user already registered|already been registered/i.test(getErrorMessage(err, ""));
+}
+
 export function getAuthErrorMessage(err: unknown, fallback: string): string {
   const message = getErrorMessage(err, fallback);
   for (const [pattern, korean] of AUTH_ERROR_PATTERNS) {

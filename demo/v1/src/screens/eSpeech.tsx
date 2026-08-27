@@ -115,7 +115,6 @@ export default function ESpeech() {
       <div className="e-topbar">
         <SpeakButton text={topic} />
         <DisplaySettings />
-        <span className="e-brand">마지막</span>
       </div>
       <h1 className="e-question">{topic}</h1>
       <p className="e-lead">천천히 말씀하시면 됩니다</p>

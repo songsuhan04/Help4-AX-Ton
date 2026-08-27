@@ -546,3 +546,35 @@
 .e-opt-size {
   font-weight: 800;
 }
+
+/* 119 직접 전화 안내 — 자주 누르는 버튼과 확실히 구분되도록 위쪽에 여백과 구분선을 둔다.
+   오발신을 막기 위해 주요 동작 버튼과 붙여놓지 않는다. */
+.e-emergency {
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--e-line);
+  flex: none;
+}
+
+.e-emergency-lead {
+  font-size: calc(15px * var(--e-fs, 1));
+  color: var(--e-text-2);
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.e-emergency-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  border: 2px solid var(--e-accent);
+  border-radius: var(--r-lg);
+  background: transparent;
+  color: var(--e-accent);
+  font-size: calc(18px * var(--e-fs, 1));
+  font-weight: 800;
+  padding: calc(16px * var(--e-fs, 1)) 16px;
+  text-decoration: none;
+}

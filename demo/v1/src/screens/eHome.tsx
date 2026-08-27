@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { SpeakButton } from "../components/SpeakButton";
 import { DisplaySettings } from "../components/DisplaySettings";
+import { EmergencyCall } from "../components/EmergencyCall";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getSignedUrl } from "../lib/storage";
@@ -127,6 +128,9 @@ export default function EHome() {
       <button className="e-secondary" onClick={() => navigate("/elder/letters")}>
         가족 영상편지 모아보기
       </button>
+
+      {/* 위험도와 무관하게 항상 같은 자리에 둔다 — EmergencyCall의 주석 참고 */}
+      <EmergencyCall />
     </AppShell>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
+import { SpeakButton } from "../components/SpeakButton";
 import { DisplaySettings } from "../components/DisplaySettings";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSignedUrl } from "../lib/storage";
@@ -66,6 +67,7 @@ export default function ELetters() {
         <span className="e-brand">영상편지 모아보기</span>
       </div>
       <h1 className="e-question">가족이 보낸 영상편지</h1>
+      <SpeakButton text="가족이 보낸 영상편지입니다. 보고 싶은 편지를 눌러 재생해 주세요." />
 
       {loading && <p className="e-lead">불러오는 중...</p>}
       {!loading && letters.length === 0 && <p className="e-lead">아직 받은 영상편지가 없습니다.</p>}

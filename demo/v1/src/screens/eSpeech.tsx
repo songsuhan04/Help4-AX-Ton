@@ -9,15 +9,15 @@ import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { RecordingNotice } from "../components/RecordingNotice";
 import { todaySeoul } from "../lib/date";
-import { SPEECH_TOPICS, pickDailyTopic } from "../lib/topics";
+import { SPEECH_TOPICS } from "../lib/topics";
+import { useDailyTopic } from "../lib/dailyPrompt";
 
 export const SCREEN_ID = "eSpeech";
 
 
 export default function ESpeech() {
   const navigate = useNavigate();
-  // 하루에 하나로 고정한다 — 화면을 다시 열어도 질문이 바뀌지 않아야 혼란이 없다
-  const [topic] = useState(() => pickDailyTopic(SPEECH_TOPICS, todaySeoul()));
+  const topic = useDailyTopic("speech", SPEECH_TOPICS);
   const [recording, setRecording] = useState<RecordingHandle | null>(null);
   const [busy, setBusy] = useState(false);
   const startedAt = useState(() => Date.now())[0];

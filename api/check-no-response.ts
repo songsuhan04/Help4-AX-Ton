@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { seoulNow, todaySeoul } from "../lib/seoulDate";
 import { createClient } from "@supabase/supabase-js";
 import { sendPushForElder } from "../lib/sendPush";
 
@@ -12,32 +13,6 @@ import { sendPushForElder } from "../lib/sendPush";
 // 놓치지 않지만, 안부 시각을 늦은 오후로 설정한 경우엔 하루 늦게 잡힐 수 있다.
 const NO_RESPONSE_ALERT_HOURS = 7;
 
-function seoulNow(): Date {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).formatToParts(new Date());
-  const get = (t: string) => parts.find((p) => p.type === t)!.value;
-  // 한국 시간의 시:분을 그대로 담은 Date — 시각 비교(deadline)에만 쓴다.
-  // Z를 붙여 UTC로 못박아, 서버 타임존이 UTC가 아니어도 해석이 달라지지 않게 한다.
-  return new Date(`${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}Z`);
-}
-
-/** 한국 시간 기준 오늘 날짜(yyyy-mm-dd) — DB의 date 컬럼과 같은 기준(demo/v1/src/lib/date.ts와 동일 규칙) */
-function todaySeoul(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const cronSecret = process.env.CRON_SECRET;

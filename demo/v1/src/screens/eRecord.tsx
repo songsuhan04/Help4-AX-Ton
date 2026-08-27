@@ -8,8 +8,8 @@ import { uploadToBucket } from "../lib/storage";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { RecordingNotice } from "../components/RecordingNotice";
-import { ELDER_LETTER_TOPICS, pickDailyTopic } from "../lib/topics";
-import { todaySeoul } from "../lib/date";
+import { ELDER_LETTER_TOPICS } from "../lib/topics";
+import { useDailyTopic } from "../lib/dailyPrompt";
 
 export const SCREEN_ID = "eRecord";
 
@@ -22,7 +22,7 @@ export default function ERecord() {
   const [stage, setStage] = useState<Stage>("record");
   // 말하기 안부와 같이 주제를 던져준다 — "하고 싶은 말씀을 하세요"만 있으면 막막해서
   // 무슨 말을 해야 할지 모른다. 근거: 실사용 피드백
-  const [topic] = useState(() => pickDailyTopic(ELDER_LETTER_TOPICS, todaySeoul()));
+  const topic = useDailyTopic("letter", ELDER_LETTER_TOPICS);
   const [recording, setRecording] = useState<RecordingHandle | null>(null);
   const [blob, setBlob] = useState<Blob | null>(null);
   const [busy, setBusy] = useState(false);

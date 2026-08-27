@@ -1,9 +1,17 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { prepareDailyPrompts } from "../lib/prepareDailyPrompts";
+import { todaySeoul } from "../lib/seoulDate";
 
-// 영상편지가 계속 쌓이면 스토리지 용량이 무한정 늘어나므로 일정 기간이 지난 영상은
-// 자동으로 정리한다. 근거: 실사용 피드백 — "1주일치만 저장되고 지나면 자동 삭제되게 하자"
-// Vercel Cron이 매일 이 엔드포인트를 호출한다(vercel.json의 crons 설정 참고).
+// 매일 새벽(18:00 UTC = 03:00 KST) 도는 크론. 두 가지 일을 한다.
+//
+// 1. 영상편지 정리 — 계속 쌓이면 스토리지가 무한정 늘어나므로 일정 기간이 지나면 지운다.
+//    근거: 실사용 피드백 — "1주일치만 저장되고 지나면 자동 삭제되게 하자"
+// 2. 오늘 쓸 안부 질문·녹음 주제 미리 만들기 — 어르신이 화면을 열 때 AI를 호출하면 그날 첫
+//    사용자가 기다려야 한다. 근거: 실사용 피드백 — "버퍼링이 걸리더라"
+//
+// 두 일이 성격은 다르지만 크론을 나누지 않았다. Vercel Hobby 플랜은 크론 개수와 실행 횟수가
+// 제한되고, 마침 이 크론이 도는 새벽 3시가 그날 것을 미리 만들기에 딱 맞는 시각이다.
 const RETENTION_DAYS = 7;
 // 한 번 실행에서 처리할 최대 건수 — 크론이 오래 밀렸다가 재개되는 경우를 대비한 안전장치
 const MAX_PER_RUN = 500;
@@ -78,5 +86,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // 삭제된 어르신이 남긴 파일도 함께 정리한다
   const orphansRemoved = await sweepOrphanFiles(admin);
 
-  res.status(200).json({ status: "ok", checked: rows?.length ?? 0, deleted, orphansRemoved });
+  // 오늘 쓸 질문·주제를 미리 만들어둔다. 실패해도 정리 작업 결과는 그대로 돌려준다 —
+  // 미리 만들지 못하면 화면이 예전처럼 즉석 생성/고정 목록으로 떨어지므로 서비스는 멈추지 않는다.
+  let prompts = null;
+  try {
+    prompts = await prepareDailyPrompts(admin, todaySeoul(), process.env.GEMINI_API_KEY);
+  } catch (err) {
+    console.error("cleanup-old-letters: prepareDailyPrompts failed", err instanceof Error ? err.message : err);
+  }
+
+  res.status(200).json({ status: "ok", checked: rows?.length ?? 0, deleted, orphansRemoved, prompts });
 }

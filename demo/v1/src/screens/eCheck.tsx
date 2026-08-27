@@ -7,6 +7,7 @@ import { DisplaySettings } from "../components/DisplaySettings";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { todaySeoul } from "../lib/date";
+import { fetchDailyPrompt } from "../lib/dailyPrompt";
 
 export const SCREEN_ID = "eCheck";
 
@@ -59,6 +60,15 @@ export default function ECheck() {
 
       if (existing?.questions) {
         setQuestions(existing.questions as GeneratedQuestion[]);
+        setLoading(false);
+        return;
+      }
+
+      // 새벽 크론이 미리 만들어둔 것이 있으면 그걸 쓴다 — AI 호출을 기다리지 않는다.
+      // 근거: 실사용 피드백 — "버퍼링이 걸리더라"
+      const prepared = await fetchDailyPrompt(elderId!, todaySeoul());
+      if (prepared?.questions && prepared.questions.length > 0) {
+        setQuestions(prepared.questions as GeneratedQuestion[]);
         setLoading(false);
         return;
       }

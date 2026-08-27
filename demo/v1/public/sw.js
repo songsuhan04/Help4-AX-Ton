@@ -15,6 +15,17 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// 크롬은 "설치 가능한 앱"인지 판단할 때 fetch 핸들러의 존재를 본다. 없으면 홈 화면에
+// 추가해도 진짜 앱(WebAPK)이 아니라 단순 바로가기로 붙어 동작이 달라진다.
+//
+// ⚠️ 여기서 절대 캐시하지 말 것. 이 앱은 배포 후에도 열려 있던 탭이 예전 코드를 계속
+// 쓰는 문제로 여러 번 고생했는데, 서비스워커가 캐시까지 하기 시작하면 그 문제가 훨씬
+// 심해진다(사용자가 앱을 지웠다 깔아야 겨우 갱신되는 상태가 된다).
+// 요청을 그대로 네트워크로 흘려보내기만 한다.
+self.addEventListener("fetch", () => {
+  // 의도적으로 event.respondWith()를 호출하지 않는다 → 브라우저 기본 동작(네트워크)에 맡긴다
+});
+
 self.addEventListener("push", (event) => {
   let payload = {};
   try {

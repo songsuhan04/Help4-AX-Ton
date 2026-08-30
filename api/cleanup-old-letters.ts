@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { prepareDailyPrompts } from "../lib/prepareDailyPrompts";
 import { todaySeoul } from "../lib/seoulDate";
+import { RETENTION } from "../lib/retention";
 
 // 매일 새벽(18:00 UTC = 03:00 KST) 도는 크론. 두 가지 일을 한다.
 //
@@ -16,7 +17,7 @@ import { todaySeoul } from "../lib/seoulDate";
 // 잘려서, 어르신 수가 늘면 주제를 다 만들지 못한 채 끊긴다(실제로 9명 중 4명에서 끊겼다).
 export const config = { maxDuration: 60 };
 
-const RETENTION_DAYS = 7;
+const RETENTION_DAYS = RETENTION.LETTER_DAYS;
 // 한 번 실행에서 처리할 최대 건수 — 크론이 오래 밀렸다가 재개되는 경우를 대비한 안전장치
 const MAX_PER_RUN = 500;
 
@@ -51,6 +52,40 @@ async function sweepOrphanFiles(admin: SupabaseClient): Promise<number> {
     }
   }
   return removed;
+}
+
+/**
+ * 보관 기간이 지난 음성 파일을 지운다. 행은 남기고 audio_url만 비운다.
+ *
+ * 받아쓴 내용·소견은 텍스트라 아주 작고 위험도 판단에 쓰인다. 무거운 것은 오디오뿐이므로
+ * 파일만 떼어낸다. 어르신의 목소리 원본을 필요 이상으로 들고 있지 않는다는 뜻이기도 하다.
+ */
+async function sweepOldVoiceFiles(admin: SupabaseClient): Promise<number> {
+  const cutoff = new Date(Date.now() - RETENTION.VOICE_AUDIO_DAYS * 86_400_000).toISOString();
+  const { data: rows, error } = await admin
+    .from("voice_response")
+    .select("id,audio_url")
+    .lt("created_at", cutoff)
+    .not("audio_url", "is", null)
+    .limit(MAX_PER_RUN);
+  if (error) {
+    console.error("sweepOldVoiceFiles: query failed", error.message);
+    return 0;
+  }
+
+  let cleared = 0;
+  for (const row of rows ?? []) {
+    const { error: rmError } = await admin.storage.from("voice").remove([row.audio_url as string]);
+    // 파일이 이미 없을 수도 있다(수동 삭제 등). 그 경우에도 audio_url은 비워야 화면이
+    // 없는 파일을 계속 불러오려 하지 않는다.
+    if (rmError) console.error("sweepOldVoiceFiles: remove failed", row.audio_url, rmError.message);
+    const { error: updError } = await admin
+      .from("voice_response")
+      .update({ audio_url: null })
+      .eq("id", row.id);
+    if (!updError) cleared++;
+  }
+  return cleared;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -89,6 +124,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // 삭제된 어르신이 남긴 파일도 함께 정리한다
   const orphansRemoved = await sweepOrphanFiles(admin);
+  // 보관 기간이 지난 음성 파일 — 예전에는 상한이 없어 계속 쌓였다
+  const voiceCleared = await sweepOldVoiceFiles(admin);
 
   // 오늘 쓸 질문·주제를 미리 만들어둔다. 실패해도 정리 작업 결과는 그대로 돌려준다 —
   // 미리 만들지 못하면 화면이 예전처럼 즉석 생성/고정 목록으로 떨어지므로 서비스는 멈추지 않는다.
@@ -99,5 +136,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error("cleanup-old-letters: prepareDailyPrompts failed", err instanceof Error ? err.message : err);
   }
 
-  res.status(200).json({ status: "ok", checked: rows?.length ?? 0, deleted, orphansRemoved, prompts });
+  res.status(200).json({ status: "ok", checked: rows?.length ?? 0, deleted, orphansRemoved, voiceCleared, prompts });
 }

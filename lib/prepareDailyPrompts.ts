@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateQuestions, type GeneratedQuestion } from "./dailyQuestions";
 import { generateTopics } from "./dailyTopic";
+import { RETENTION } from "./retention";
 
 // 그날 쓸 안부 질문과 녹음 주제를 새벽에 미리 만들어 daily_prompt에 넣는다.
 //
@@ -19,7 +20,7 @@ const RECENT_ANSWER_LIMIT = 8;
 // 지난 주제를 며칠치까지 남겨둘지. 주제 반복을 피하려면 최근 며칠만 알면 되고, 그 이상은
 // 하루하루 쌓이기만 한다(어르신 1명당 매일 1행). 영상편지에 7일 보관을 둔 것과 같은 이유로
 // 여기도 상한을 둔다 — 지병·안부 답변에서 뽑아낸 문장이라 오래 들고 있을 이유가 없다.
-const PROMPT_RETENTION_DAYS = 14;
+const PROMPT_RETENTION_DAYS = RETENTION.PROMPT_DAYS;
 
 // 어르신을 한 명씩 차례로 처리했더니 함수 실행 시간을 넘겨 도중에 끊겼다. 실제로 8/29
 // 새벽 실행은 9명 중 4명만 만들고 멈췄다(어르신당 15~20초 × 9명). 몇 명씩 동시에 처리한다.

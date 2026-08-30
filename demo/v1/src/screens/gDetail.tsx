@@ -13,6 +13,7 @@ import { computeStreak } from "../lib/streak";
 import { hasAnswers } from "../lib/checkin";
 import { shiftDateString, todaySeoul } from "../lib/date";
 import type { RiskLevel } from "../config/riskConstants";
+import { RETENTION } from "../config/retention";
 
 const TREND_DAYS = 14;
 
@@ -44,7 +45,8 @@ interface VoiceRow {
   id: string;
   /** 이 녹음이 어느 날짜의 안부인지 — 오늘 것인지 구분해 보여주기 위해 필요하다 */
   checkinDate: string;
-  audio_url: string;
+  // 보관 기간이 지나면 파일만 지우고 행은 남긴다 — 그래서 null일 수 있다
+  audio_url: string | null;
   created_at: string;
   transcript: string | null;
   observations: string | null;
@@ -147,11 +149,16 @@ export default function GDetail() {
           setVoiceLoaded(true);
           return;
         }
-        const signedUrl = await getSignedUrl("voice", data.audio_url).catch(() => undefined);
+        // 보관 기간이 지나 파일이 지워졌으면 audio_url이 비어 있다. 그때는 재생만 못 할 뿐,
+        // 받아쓴 내용과 소견은 그대로 보여줘야 한다.
+        const audioUrl = (data.audio_url as string | null) ?? null;
+        const signedUrl = audioUrl
+          ? await getSignedUrl("voice", audioUrl).catch(() => undefined)
+          : undefined;
         setVoice({
           id: data.id as string,
           checkinDate: dateById.get(data.daily_checkin_id as string) ?? "",
-          audio_url: data.audio_url as string,
+          audio_url: audioUrl,
           created_at: data.created_at as string,
           transcript: (data.transcript as string | null) ?? null,
           observations: (data.observations as string | null) ?? null,
@@ -313,7 +320,7 @@ export default function GDetail() {
             </div>
           )}
 
-          {voice?.signedUrl && (
+          {voice && (
             <div className="g-card">
               <div className="g-card-title">
                 <span>{voice.checkinDate === todaySeoul() ? "오늘 말하기 안부" : "지난 말하기 안부"}</span>
@@ -326,7 +333,15 @@ export default function GDetail() {
                 </p>
               )}
               <div className="g-timestamp">{new Date(voice.created_at).toLocaleString("ko-KR")}</div>
-              <audio src={voice.signedUrl} controls style={{ width: "100%" }} />
+              {voice.signedUrl ? (
+                <audio src={voice.signedUrl} controls style={{ width: "100%" }} />
+              ) : (
+                // 파일은 보관 기간이 지나 지워졌지만 아래 받아쓴 내용은 남아 있다.
+                // 아무 설명 없이 재생기만 사라지면 고장으로 보인다.
+                <p className="g-sub" style={{ margin: "0 0 8px" }}>
+                  음성 파일은 보관 기간({RETENTION.VOICE_AUDIO_DAYS}일)이 지나 삭제되었습니다. 아래 기록만 남아 있어요.
+                </p>
+              )}
               {voice.analysis_status === "failed" && (
                 <p className="g-error">음성 분석에 실패했습니다. 직접 들어보고 확인해주세요.</p>
               )}

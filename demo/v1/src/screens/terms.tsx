@@ -1,5 +1,6 @@
 import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
+import { RETENTION } from "../config/retention";
 
 export const SCREEN_ID = "terms";
 
@@ -46,9 +47,19 @@ export default function Terms() {
         <h2 className="g-terms-heading">3. 개인정보 수집·이용</h2>
         <p className="g-sub">
           가입 시 이름·이메일 등 일반 개인정보를 수집합니다. 어르신의 지병 등 건강에 관한 정보는 개인정보보호법상
-          민감정보로, 일반 개인정보와 별도로 동의를 받습니다. 음성 안부와 영상편지는 AI 분석을 위해 Google Gemini
-          API(Google LLC, 국외)로 전송되며, 이 역시 별도 동의를 받습니다. 영상편지 파일은 발신 후 7일이 지나면
-          자동으로 삭제됩니다.
+          민감정보로, 일반 개인정보와 별도로 동의를 받습니다.
+        </p>
+        <p className="g-sub">
+          {/* 예전에는 "음성 안부와 영상편지"가 Gemini로 간다고 적혀 있었는데, 영상은 보내지 않는다.
+              실제로 하지 않는 처리를 동의받으면 동의 범위가 실제보다 넓어진다. */}
+          <strong>AI로 보내는 것</strong>: 음성 안부 파일과, 안부 질문·주제를 만들기 위한 지병·최근 안부 응답이 Google
+          Gemini API(Google LLC, 국외)로 전송됩니다. 이는 별도로 동의를 받습니다.{" "}
+          <strong>영상편지는 어떤 AI 분석도 하지 않으며 외부로 전송되지 않습니다.</strong>
+        </p>
+        <p className="g-sub">
+          <strong>보관 기간</strong>: 영상편지 파일은 발신 후 {RETENTION.LETTER_DAYS}일, 음성 안부 파일은 녹음 후{" "}
+          {RETENTION.VOICE_AUDIO_DAYS}일이 지나면 자동으로 삭제됩니다. 음성 파일이 삭제된 뒤에도 AI가 받아쓴 내용과
+          소견은 안부 기록으로 남으며, 회원 탈퇴 시 모두 삭제됩니다.
         </p>
       </section>
 

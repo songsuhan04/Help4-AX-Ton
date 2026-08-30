@@ -4,6 +4,7 @@ import { AppShell } from "../components/AppShell";
 import { DisplaySettings } from "../components/DisplaySettings";
 import { SpeakButton } from "../components/SpeakButton";
 import { createTestBlob, startRecording, type RecordingHandle } from "../lib/recorder";
+import { extensionForBlob } from "../lib/mediaType";
 import { uploadToBucket } from "../lib/storage";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
@@ -78,7 +79,7 @@ export default function ERecord() {
     const elderId = getStoredElderProfileId();
     if (supabaseConfigured && elderId) {
       const supabase = getSupabase();
-      const path = await uploadToBucket("letters", elderId, blob, "webm");
+      const path = await uploadToBucket("letters", elderId, blob, extensionForBlob(blob, "webm"));
       const { data: elder } = await supabase.from("elder_profile").select("family_account_id").eq("id", elderId).single();
       await supabase.from("video_letter").insert({
         sender_type: "elder",

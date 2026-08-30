@@ -4,6 +4,7 @@ import { AppShell } from "../components/AppShell";
 import { DisplaySettings } from "../components/DisplaySettings";
 import { SpeakButton } from "../components/SpeakButton";
 import { createTestBlob, startRecording, type RecordingHandle } from "../lib/recorder";
+import { extensionForBlob } from "../lib/mediaType";
 import { uploadToBucket, deleteFromBucket } from "../lib/storage";
 import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
@@ -45,7 +46,7 @@ export default function ESpeech() {
     const elderId = getStoredElderProfileId();
     if (supabaseConfigured && elderId) {
       const supabase = getSupabase();
-      const path = await uploadToBucket("voice", elderId, blob, "webm");
+      const path = await uploadToBucket("voice", elderId, blob, extensionForBlob(blob, "webm"));
       // 오늘 안부체크 기록에 녹음을 붙인다. 이 화면은 안부체크를 마쳐야 오게 되어 있지만,
       // 저장이 실패했거나 주소로 바로 들어온 경우엔 붙일 곳이 없다. 예전에는 .single()로
       // 조회하고 결과를 그냥 넘겨서, 그런 경우 녹음이 조용히 사라지고 화면은 완료로 넘어갔다.

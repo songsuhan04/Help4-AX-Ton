@@ -8,7 +8,7 @@ import { MedicalDisclaimer } from "../components/MedicalDisclaimer";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getSignedUrl, deleteFromBucket } from "../lib/storage";
 import { VideoDownloadButton } from "../components/VideoDownloadButton";
-import { getRpcErrorMessage } from "../lib/errors";
+import { getErrorMessage, getRpcErrorMessage } from "../lib/errors";
 import { computeStreak } from "../lib/streak";
 import { hasAnswers } from "../lib/checkin";
 import { shiftDateString, todaySeoul } from "../lib/date";
@@ -64,6 +64,7 @@ export default function GDetail() {
   const [voice, setVoice] = useState<VoiceRow | null>(null);
   // 음성 조회가 끝났는지 구분 — 로딩 중과 "기록 없음"을 같은 문구로 보여주면 안 된다
   const [voiceLoaded, setVoiceLoaded] = useState(false);
+  const [reanalyzing, setReanalyzing] = useState(false);
   const [trend, setTrend] = useState<TrendPoint[]>([]);
   const [streak, setStreak] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -194,6 +195,40 @@ export default function GDetail() {
         setStreak(computeStreak((data ?? []).filter(hasAnswers).map((r) => r.date as string)))
       );
   }, [elderId]);
+
+  // 분석은 일시적인 이유로도 실패한다(잠깐 몰렸거나 응답이 늦거나). 그때 보호자가 할 수 있는
+  // 일이 아무것도 없어서, 어르신이 남긴 말씀이 그날치로 그냥 사라졌다. 다시 시도할 길을 준다.
+  async function reanalyze() {
+    if (!voice) return;
+    setReanalyzing(true);
+    try {
+      const resp = await fetch("/api/analyze-voice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ voiceResponseId: voice.id }),
+      });
+      const json = await resp.json();
+      if (json.status !== "ok") throw new Error(json.error ?? "분석에 실패했습니다");
+      // 갱신된 결과를 다시 읽어 화면에 반영한다
+      const { data } = await getSupabase()
+        .from("voice_response")
+        .select("transcript,observations,analysis_status")
+        .eq("id", voice.id)
+        .maybeSingle();
+      if (data) {
+        setVoice({
+          ...voice,
+          transcript: (data.transcript as string | null) ?? null,
+          observations: (data.observations as string | null) ?? null,
+          analysis_status: data.analysis_status as string,
+        });
+      }
+    } catch (err) {
+      setError(getErrorMessage(err, "다시 분석하지 못했습니다"));
+    } finally {
+      setReanalyzing(false);
+    }
+  }
 
   async function markChecked() {
     if (!risk) return;
@@ -343,7 +378,13 @@ export default function GDetail() {
                 </p>
               )}
               {voice.analysis_status === "failed" && (
-                <p className="g-error">음성 분석에 실패했습니다. 직접 들어보고 확인해주세요.</p>
+                <>
+                  <p className="g-error">음성 분석에 실패했습니다. 직접 들어보고 확인해주세요.</p>
+                  {/* 대개 일시적인 문제라 다시 누르면 된다 — 실제로 같은 파일이 재시도에서 정상 인식됐다 */}
+                  <button className="g-button g-button--secondary" onClick={reanalyze} disabled={reanalyzing}>
+                    {reanalyzing ? "다시 분석하는 중..." : "다시 분석하기"}
+                  </button>
+                </>
               )}
               {voice.analysis_status === "ok" && (voice.transcript || voice.observations) && (
                 <div className="g-note">

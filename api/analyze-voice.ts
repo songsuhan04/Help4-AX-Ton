@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { assessRisk } from "../lib/riskScoring";
+import { geminiAudioMime } from "../lib/audioMime";
+import { retryTransient } from "../lib/retry";
 
 async function assessRiskForVoice(admin: SupabaseClient, voiceResponseId: string): Promise<void> {
   const { data: voice } = await admin
@@ -20,6 +22,10 @@ async function assessRiskForVoice(admin: SupabaseClient, voiceResponseId: string
 
 // 음성 분석 — 실패해도 하루 기록은 이미 저장되어 있으므로 안전하게 무시된다 (fire-and-forget).
 // 근거: docs/기능설계서.md §2.2, plan §"Gemini 연동 범위"
+//
+// 오디오 내려받기와 Gemini 호출을 합쳐 실측 17초가 걸린다. 상한을 적어두지 않으면 더 짧은
+// 기본값에 걸려 조용히 잘리고, 그러면 실패 이유조차 남지 않는다.
+export const config = { maxDuration: 60 };
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     res.status(405).end();
@@ -62,7 +68,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const audioResp = await fetch(signed.signedUrl);
     const audioBuffer = Buffer.from(await audioResp.arrayBuffer());
 
-    const geminiResp = await fetch(
+    // 한 번 삐끗하면 그날 음성 분석이 영구히 사라진다 — 어르신은 말씀을 남겼는데 보호자에게는
+    // "분석 실패"만 남는다. 실제로 그런 일이 있었고, 나중에 같은 파일을 다시 돌리니 정상
+    // 인식됐다. 일시적인 실패만 짧게 다시 시도한다(영구적 실패는 재시도해도 같다).
+    const text = await retryTransient(
+      async () => {
+        const geminiResp = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiKey}`,
       {
         method: "POST",
@@ -83,7 +94,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     "5. speech_rate_wpm과 silence_ratio는 확신이 없으면 null로 두세요.\n" +
                     "형식: {\"transcript\": string, \"speech_rate_wpm\": number|null, \"silence_ratio\": number|null, \"observations\": string}",
                 },
-                { inline_data: { mime_type: "audio/webm", data: audioBuffer.toString("base64") } },
+                { inline_data: { mime_type: geminiAudioMime(row.audio_url as string), data: audioBuffer.toString("base64") } },
               ],
             },
           ],
@@ -91,11 +102,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }),
       }
     );
-    const geminiJson = await geminiResp.json();
-    if (!geminiResp.ok || geminiJson?.error) {
-      throw new Error(geminiJson?.error?.message ?? `gemini request failed (${geminiResp.status})`);
-    }
-    const text = geminiJson?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+        const geminiJson = await geminiResp.json();
+        if (!geminiResp.ok || geminiJson?.error) {
+          const detail = geminiJson?.error?.message ?? "";
+          // 상태 코드를 메시지에 남겨야 재시도 판단(lib/retry.ts)이 429/5xx를 알아본다
+          throw new Error(`gemini request failed (${geminiResp.status})${detail ? `: ${detail}` : ""}`);
+        }
+        return (geminiJson?.candidates?.[0]?.content?.parts?.[0]?.text ?? "") as string;
+      },
+      {
+        onRetry: (attempt, err) =>
+          console.error(`analyze-voice: 재시도 ${attempt}회`, err instanceof Error ? err.message : err),
+      }
+    );
 
     // responseMimeType을 지정해도 가끔 ```json ... ``` 코드블록으로 감싸서 응답하는 경우가 있어 방어적으로 벗겨낸다
     const unfenced = text.replace(/^```(?:json)?\s*([\s\S]*?)\s*```$/, "$1");
@@ -122,8 +141,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await assessRiskForVoice(admin, voiceResponseId);
     res.status(200).json({ status: "ok" });
   } catch (err) {
-    await admin.from("voice_response").update({ analysis_status: "failed" }).eq("id", voiceResponseId);
+    const reason = err instanceof Error ? err.message : String(err);
+    // 왜 실패했는지 남긴다. 예전에는 상태만 바꾸고 이유는 응답으로만 보냈는데, 그 응답을
+    // 받는 쪽은 fire-and-forget이라 아무도 보지 않는다. Vercel 로그는 한 시간이면 사라져서
+    // 나중에는 확인할 방법이 없었다.
+    console.error("analyze-voice: 분석 실패", voiceResponseId, reason);
+    await admin
+      .from("voice_response")
+      .update({ analysis_status: "failed", analysis_json: { error: reason } })
+      .eq("id", voiceResponseId);
     await assessRiskForVoice(admin, voiceResponseId);
-    res.status(200).json({ status: "failed", error: err instanceof Error ? err.message : String(err) });
+    res.status(200).json({ status: "failed", error: reason });
   }
 }

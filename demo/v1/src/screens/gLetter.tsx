@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { BackButton } from "../components/BackButton";
 import { createTestBlob, startRecording, type RecordingHandle } from "../lib/recorder";
+import { extensionForBlob } from "../lib/mediaType";
 import { uploadToBucket } from "../lib/storage";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { getErrorMessage } from "../lib/errors";
@@ -80,7 +81,7 @@ export default function GLetter() {
     try {
       const supabase = getSupabase();
       const { data: userData } = await supabase.auth.getUser();
-      const path = await uploadToBucket("letters", elderId!, blob, "webm");
+      const path = await uploadToBucket("letters", elderId!, blob, extensionForBlob(blob, "webm"));
       const { error } = await supabase.from("video_letter").insert({
         sender_type: "family",
         sender_id: userData.user?.id,

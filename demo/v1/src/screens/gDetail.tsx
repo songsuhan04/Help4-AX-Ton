@@ -10,6 +10,7 @@ import { getSignedUrl, deleteFromBucket } from "../lib/storage";
 import { VideoDownloadButton } from "../components/VideoDownloadButton";
 import { getRpcErrorMessage } from "../lib/errors";
 import { computeStreak } from "../lib/streak";
+import { hasAnswers } from "../lib/checkin";
 import { shiftDateString, todaySeoul } from "../lib/date";
 import type { RiskLevel } from "../config/riskConstants";
 
@@ -176,12 +177,15 @@ export default function GDetail() {
     // 연속 참여 기록 — 기능설계서.md §1 "연속 참여 기록"
     supabase
       .from("daily_checkin")
-      .select("date")
+      // 답변까지 받아와서 거른다 — 아무것도 답하지 않은 행이 연속 기록을 부풀리면 안 된다
+      .select("date,answers")
       .eq("elder_profile_id", elderId)
       .eq("skipped", false)
       .order("date", { ascending: false })
       .limit(400)
-      .then(({ data }) => setStreak(computeStreak((data ?? []).map((r) => r.date as string))));
+      .then(({ data }) =>
+        setStreak(computeStreak((data ?? []).filter(hasAnswers).map((r) => r.date as string)))
+      );
   }, [elderId]);
 
   async function markChecked() {

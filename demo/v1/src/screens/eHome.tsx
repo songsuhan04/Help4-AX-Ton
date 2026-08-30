@@ -10,6 +10,7 @@ import { getSignedUrl } from "../lib/storage";
 import { VideoDownloadButton } from "../components/VideoDownloadButton";
 import { todaySeoul } from "../lib/date";
 import { computeStreak } from "../lib/streak";
+import { hasAnswers, isAnswered } from "../lib/checkin";
 
 interface LetterRow {
   id: string;
@@ -48,17 +49,20 @@ export default function EHome() {
       .eq("date", todaySeoul())
       .maybeSingle()
       .then(({ data }) => {
-        setDoneToday(Boolean(data?.skipped || (Array.isArray(data?.answers) && data.answers.length > 0)));
+        setDoneToday(isAnswered(data));
         setLoading(false);
       });
     supabase
       .from("daily_checkin")
-      .select("date")
+      // 답변까지 받아와서 거른다 — 아무것도 답하지 않은 행이 연속 기록을 부풀리면 안 된다
+      .select("date,answers")
       .eq("elder_profile_id", elderId)
       .eq("skipped", false)
       .order("date", { ascending: false })
       .limit(400)
-      .then(({ data }) => setStreak(computeStreak((data ?? []).map((r) => r.date as string))));
+      .then(({ data }) =>
+        setStreak(computeStreak((data ?? []).filter(hasAnswers).map((r) => r.date as string)))
+      );
     // 가장 최근 가족 영상편지를 홈에 바로 띄운다 — 완료 화면만 밋밋하게 두지 않고
     // 어르신이 별도 화면으로 들어가지 않아도 바로 볼 수 있게.
     // 근거: 실사용 피드백 — "가족이 보낸 영상편지가 바로 나오면 어떨까"

@@ -50,22 +50,9 @@ export default function ECheck() {
     const supabase = getSupabase();
 
     async function load() {
-      // 오늘 이미 생성된 질문이 있으면 그대로 재사용(새로고침해도 같은 질문 유지)
-      const { data: existing } = await supabase
-        .from("daily_checkin")
-        .select("questions")
-        .eq("elder_profile_id", elderId)
-        .eq("date", todaySeoul())
-        .maybeSingle();
-
-      if (existing?.questions) {
-        setQuestions(existing.questions as GeneratedQuestion[]);
-        setLoading(false);
-        return;
-      }
-
       // 새벽 크론이 미리 만들어둔 것이 있으면 그걸 쓴다 — AI 호출을 기다리지 않는다.
       // 근거: 실사용 피드백 — "버퍼링이 걸리더라"
+      // 즉석 생성한 질문도 여기에 저장되므로, 새로고침해도 같은 질문이 나온다.
       const prepared = await fetchDailyPrompt(elderId!, todaySeoul());
       if (prepared?.questions && prepared.questions.length > 0) {
         setQuestions(prepared.questions as GeneratedQuestion[]);
@@ -93,7 +80,7 @@ export default function ECheck() {
         const resp = await fetch("/api/generate-questions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ conditions, recentQuestions }),
+          body: JSON.stringify({ conditions, recentQuestions, elderProfileId: elderId, date: todaySeoul() }),
         });
         const json = await resp.json();
         generated = json.questions ?? [];
@@ -111,14 +98,12 @@ export default function ECheck() {
         ];
       }
 
+      // 여기서 daily_checkin에 행을 만들지 않는다. 예전에는 새로고침 대비로 질문을 미리
+      // 저장했는데, 그러면 어르신이 아무것도 답하지 않았는데 그날 행이 생긴다. 보호자 목록·
+      // 위험도 계산·무응답 알림이 모두 "행이 있으면 응답한 것"으로 보기 때문에, 화면만 열고
+      // 나간 어르신이 "오늘 완료"로 보이고 무응답 알림까지 막혔다.
+      // 질문은 서버가 daily_prompt에 저장한다(api/generate-questions.ts).
       setQuestions(generated);
-      // 다음에 새로고침해도 같은 질문 유지되도록 미리 저장
-      await supabase
-        .from("daily_checkin")
-        .upsert(
-          { elder_profile_id: elderId, date: todaySeoul(), questions: generated },
-          { onConflict: "elder_profile_id,date" }
-        );
       setLoading(false);
     }
 

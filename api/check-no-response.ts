@@ -42,11 +42,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   for (const elder of elders ?? []) {
     const { data: checkin } = await admin
       .from("daily_checkin")
-      .select("id")
+      .select("id,answers,skipped")
       .eq("elder_profile_id", elder.id)
       .eq("date", today)
       .maybeSingle();
-    if (checkin) continue; // 이미 응답함 — 대상 아님
+    // 행이 있다고 응답한 것이 아니다. 답변이 하나도 없는 행이 있으면 무응답 알림이
+    // 조용히 걸러졌다 — 어르신이 하루 종일 아무 말이 없어도 보호자에게 아무것도 가지 않는다.
+    // 이 알림은 "앱을 열지 않았다"는 것을 알리는 마지막 장치라 특히 새면 안 된다.
+    const answered =
+      Boolean(checkin?.skipped) || (Array.isArray(checkin?.answers) && checkin.answers.length > 0);
+    if (answered) continue; // 이미 응답함 — 대상 아님
 
     const [h, m] = (elder.checkin_time as string).slice(0, 5).split(":").map(Number);
     // now가 Z로 못박힌 Date라 setUTC*로 맞춰야 서버 타임존과 무관하게 같은 결과가 나온다

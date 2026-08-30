@@ -57,6 +57,13 @@ export async function assessRisk(
   // 오늘 체크인이 아직 없으면(예: 음성만 먼저 저장되는 경우는 없지만 방어적으로) 계산하지 않는다.
   if (!checkin) return;
 
+  // 행은 있지만 답변도 건너뛰기도 없는 경우 — 아직 아무것도 답하지 않은 것이다.
+  // 예전에는 이런 행을 점수 0으로 계산해 "안전"으로 기록했다. 어르신이 화면만 열고
+  // 나갔는데 안전하다고 적히면, 그 기록이 무응답 판단까지 덮어버린다.
+  // 판단할 근거가 없으면 판단하지 않는다.
+  const hasAnswers = Array.isArray(checkin.answers) && checkin.answers.length > 0;
+  if (!checkin.skipped && !hasAnswers) return;
+
   const conditionTypes = new Set((conditions ?? []).map((c) => c.condition_type as string));
   const reasons: string[] = [];
   let score = 0;

@@ -10,6 +10,7 @@ import { getErrorMessage } from "../lib/errors";
 import { assertWritten } from "../lib/write";
 import type { RiskLevel } from "../config/riskConstants";
 import { todaySeoul } from "../lib/date";
+import { hasAnswers } from "../lib/checkin";
 
 export const SCREEN_ID = "gList";
 
@@ -76,12 +77,15 @@ export default function GList() {
         const today = todaySeoul();
         const { data: checkins } = await supabase
           .from("daily_checkin")
-          .select("elder_profile_id,skipped")
+          .select("elder_profile_id,skipped,answers")
           .eq("date", today)
           .in("elder_profile_id", ids);
         const statusMap: Record<string, TodayStatus> = {};
         for (const c of checkins ?? []) {
-          statusMap[c.elder_profile_id as string] = c.skipped ? "skipped" : "done";
+          // 행이 있다고 완료가 아니다 — 실제로 답한 것이 있어야 완료다.
+          // 아무것도 답하지 않은 행은 "오늘 아직"으로 남겨 보호자가 잘못 안심하지 않게 한다.
+          if (c.skipped) statusMap[c.elder_profile_id as string] = "skipped";
+          else if (hasAnswers(c)) statusMap[c.elder_profile_id as string] = "done";
         }
         setTodayStatus(statusMap);
       });

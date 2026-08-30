@@ -7,6 +7,7 @@ import { getStoredElderProfileId } from "../lib/elderSession";
 import { getSignedUrl } from "../lib/storage";
 import { getSupabase, supabaseConfigured } from "../lib/supabase";
 import { computeStreak } from "../lib/streak";
+import { hasAnswers } from "../lib/checkin";
 
 export const SCREEN_ID = "eDone";
 
@@ -31,12 +32,15 @@ export default function EDone() {
     // 계산하려면 날짜를 받아 오늘(또는 어제)부터 거슬러 올라가며 끊기는 지점을 찾아야 한다.
     supabase
       .from("daily_checkin")
-      .select("date")
+      // 답변까지 받아와서 거른다 — 아무것도 답하지 않은 행이 연속 기록을 부풀리면 안 된다
+      .select("date,answers")
       .eq("elder_profile_id", elderId)
       .eq("skipped", false)
       .order("date", { ascending: false })
       .limit(400)
-      .then(({ data }) => setStreak(computeStreak((data ?? []).map((r) => r.date as string))));
+      .then(({ data }) =>
+        setStreak(computeStreak((data ?? []).filter(hasAnswers).map((r) => r.date as string)))
+      );
     supabase
       .from("video_letter")
       .select("id,title,video_url")

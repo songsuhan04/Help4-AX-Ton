@@ -3,8 +3,10 @@
 // ⚠️ 실제 집행(점수 계산)은 서버사이드 lib/riskScoring.ts(repo root)에 구현되어 있다 —
 // 이 파일은 클라이언트 코드/문서가 참조하는 미러이며, 값을 바꿀 때 두 곳을 함께 수정해야 한다.
 export const RISK = {
-  // ⚠️ 문헌 기준선은 1시간(낙상 후 long lie)이라 7시간은 그보다 느슨하다. 다만 지금은 값보다
-  // 집행 주기가 병목이다 — Hobby 크론이 하루 1회라 7시간째를 잡지 못하고 하루 한 번 몰아서 확인한다.
+  // ⚠️ 문헌 기준선은 1시간(낙상 후 long lie)이라 7시간은 그보다 느슨하다. 다만 낙상 감지가
+  // 아니라 "앱을 열지 않았다"를 보는 값이라, 더 낮추면 늦잠·외출로도 알림이 쏟아진다.
+  // ✅ 병목이던 집행 주기는 해결했다 — GitHub Actions가 매시간 확인한다
+  // (.github/workflows/check-no-response.yml). 값은 그대로 두고도 알림이 약 6시간 빨라졌다.
   // 근거·한계: docs/근거자료-임계값.md
   NO_RESPONSE_ALERT_HOURS: 7, // ✅ 구현됨 — api/check-no-response.ts(Vercel Cron)
   // ⚠️ 일본 노년학의 homebound 표준 정의는 '외출 주 1회 이하'라, 3일 연속은 그보다 엄격하다

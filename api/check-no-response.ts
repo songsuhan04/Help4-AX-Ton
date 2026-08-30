@@ -8,9 +8,12 @@ import { sendPushForElder } from "../lib/sendPush";
 // 다른 위험도 계산(lib/riskScoring.ts)은 어르신이 뭔가 했을 때(안부체크 완료, 음성분석 완료)만
 // 재계산되는데, "아무것도 안 했다"는 부재는 트리거할 사용자 행동이 없다. 그래서 이 엔드포인트만
 // 유일하게 스스로 주기적으로 확인하는 배치(Vercel Cron)로 만들었다.
-// ⚠️ Vercel Hobby 플랜은 크론을 하루 1번만 돌릴 수 있어 정확히 7시간째를 못 잡고, 하루 한 번
-// (21:00 KST) 몰아서 확인한다 — 기본 안부 시각(08:00) 기준으로는 충분히 늦은 시간이라 대부분
-// 놓치지 않지만, 안부 시각을 늦은 오후로 설정한 경우엔 하루 늦게 잡힐 수 있다.
+// 실행 주기: GitHub Actions가 매시간 이 엔드포인트를 부른다(.github/workflows/check-no-response.yml).
+// Vercel Hobby 플랜은 크론을 하루 1번만 돌릴 수 있어서, 예전에는 21:00 KST에 몰아서 확인했다.
+// 안부 시각이 08:00이면 7시간째인 15:00에는 아무 일도 일어나지 않고 21:00에야 알림이 갔다 —
+// 임계값이 7시간인데 실제로는 13시간이 걸린 셈이다. 임계값을 낮추는 것보다 이 주기를 고치는
+// 쪽이 효과가 크다(7시간 그대로 두고도 6시간 빨라진다). 근거: docs/근거자료-임계값.md
+// vercel.json의 하루 1회 크론은 GitHub Actions가 멈췄을 때를 대비해 남겨둔다(중복 실행은 안전하다).
 const NO_RESPONSE_ALERT_HOURS = 7;
 
 
@@ -61,11 +64,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { data: existing } = await admin
       .from("risk_assessment")
-      .select("level")
+      .select("level,triggered_by")
       .eq("elder_profile_id", elder.id)
       .eq("date", today)
       .maybeSingle();
     if (existing?.level === "심각") continue; // 이미 더 심각한 판정이 있으면 낮추지 않음
+
+    // 오늘 이미 무응답으로 알렸으면 다시 보내지 않는다.
+    // 하루 한 번 돌 때는 필요 없던 처리인데, 매시간 돌게 되면서 필요해졌다 — 응답이 계속
+    // 없으면 같은 알림이 매시간 가고, 그러면 보호자가 알림을 꺼버린다. 알림을 끄는 순간
+    // 이 기능은 아무 의미가 없어진다.
+    const flaggedToday = Boolean(
+      (existing?.triggered_by as { no_response_hours?: number } | null)?.no_response_hours
+    );
+    if (flaggedToday) continue;
 
     await admin.from("risk_assessment").upsert(
       {

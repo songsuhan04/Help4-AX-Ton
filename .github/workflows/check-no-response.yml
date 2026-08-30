@@ -1,2 +1,53 @@
-크기: 1 바이트
-내용: '\n'
+# 무응답 확인을 매시간 돌린다.
+#
+# 왜 GitHub Actions인가: Vercel Hobby 플랜은 크론을 하루 한 번만 돌릴 수 있다. 그래서 안부
+# 시각이 08:00인 어르신은 7시간째인 15:00이 아니라 21:00에야 알림이 갔다 — 임계값은 7시간인데
+# 실제로는 13시간이 걸린 셈이다. 임계값을 낮추는 것보다 이 주기를 고치는 쪽이 효과가 크다.
+# 7시간을 그대로 두고도 6시간 빨라진다. 근거와 한계: docs/근거자료-임계값.md
+#
+# 이 저장소는 public이라 Actions 사용이 무료다. 하는 일은 기존 엔드포인트를 부르는 것뿐이고,
+# 판단 로직은 전부 api/check-no-response.ts에 있다.
+name: 무응답 확인 (매시간)
+
+on:
+  schedule:
+    # 매시 정각(UTC). KST는 UTC+9라 한국 시간으로도 매시 정각에 돈다.
+    # ⚠️ GitHub의 예약 실행은 몇 분~십여 분 늦을 수 있다. 안부 알림 용도로는 감당할 만하다.
+    - cron: "0 * * * *"
+  # 손으로 한 번 돌려볼 수 있게 열어둔다 (Actions 탭 → Run workflow)
+  workflow_dispatch:
+
+# 앞 실행이 늦어져 겹치면 새 실행만 남긴다 — 같은 확인을 두 번 할 이유가 없다
+concurrency:
+  group: check-no-response
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 무응답 확인 엔드포인트 호출
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET 시크릿이 없습니다. Settings → Secrets and variables → Actions 에 추가하세요."
+            exit 1
+          fi
+
+          # -sS: 진행 막대는 감추되 에러는 보이게. 본문과 상태 코드를 함께 받는다.
+          response=$(curl -sS -X POST \
+            "https://help4-ax-ton.vercel.app/api/check-no-response" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -w "\n%{http_code}" --max-time 120)
+
+          status=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          echo "HTTP $status"
+          echo "$body"
+
+          # 조용히 실패하면 알림이 몇 주 동안 안 가도 아무도 모른다. 실패는 반드시 드러나야 한다.
+          if [ "$status" != "200" ]; then
+            echo "::error::무응답 확인 실패 (HTTP $status)"
+            exit 1
+          fi

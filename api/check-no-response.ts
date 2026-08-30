@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { seoulNow, todaySeoul } from "../lib/seoulDate";
 import { createClient } from "@supabase/supabase-js";
 import { sendPushForElder } from "../lib/sendPush";
+import { authorizeCron } from "../lib/cronAuth";
 
 // 기능설계서.md §3/§6 오픈 이슈 — "안부 시각으로부터 7시간 넘게 무응답이면 위험 신호로 본다".
 // 근거: Help4/발표 자료/위험도가중치 근거자료.docx 및 팀 논의.
@@ -18,11 +19,7 @@ const NO_RESPONSE_ALERT_HOURS = 7;
 
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && req.headers.authorization !== `Bearer ${cronSecret}`) {
-    res.status(401).json({ error: "unauthorized" });
-    return;
-  }
+  if (!authorizeCron(req, res)) return;
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

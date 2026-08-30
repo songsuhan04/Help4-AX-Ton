@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { prepareDailyPrompts } from "../lib/prepareDailyPrompts";
 import { todaySeoul } from "../lib/seoulDate";
 import { RETENTION } from "../lib/retention";
+import { authorizeCron } from "../lib/cronAuth";
 
 // 매일 새벽(18:00 UTC = 03:00 KST) 도는 크론. 두 가지 일을 한다.
 //
@@ -89,11 +90,7 @@ async function sweepOldVoiceFiles(admin: SupabaseClient): Promise<number> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && req.headers.authorization !== `Bearer ${cronSecret}`) {
-    res.status(401).json({ error: "unauthorized" });
-    return;
-  }
+  if (!authorizeCron(req, res)) return;
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

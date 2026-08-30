@@ -12,6 +12,6 @@ node_modules/
 vapid-keys*
 *.pem
 
-# 워크플로 파일은 저장소 주인이 GitHub 웹에서 직접 추가한다 —
-# 이 작업에 쓰는 토큰에 workflow 권한이 없어 푸시가 거부된다.
-.github/workflows/
+# ⚠️ .github/workflows/ 는 무시하지 않는다. 한 번 무시로 걸어뒀더니 새 워크플로를 추가해도
+# 조용히 빠지는 상태가 됐다. 다만 일부 토큰(workflow 권한 없음)으로는 푸시가 거부되므로,
+# 그 경우 GitHub 웹에서 직접 편집해야 한다.

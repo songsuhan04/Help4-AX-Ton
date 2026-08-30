@@ -20,6 +20,7 @@ export default function ESpeech() {
   const topic = useDailyTopic("speech", SPEECH_TOPICS);
   const [recording, setRecording] = useState<RecordingHandle | null>(null);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const startedAt = useState(() => Date.now())[0];
 
   async function start() {
@@ -40,17 +41,26 @@ export default function ESpeech() {
   }
 
   async function save(blob: Blob) {
+    setError(null);
     const elderId = getStoredElderProfileId();
     if (supabaseConfigured && elderId) {
       const supabase = getSupabase();
       const path = await uploadToBucket("voice", elderId, blob, "webm");
+      // 오늘 안부체크 기록에 녹음을 붙인다. 이 화면은 안부체크를 마쳐야 오게 되어 있지만,
+      // 저장이 실패했거나 주소로 바로 들어온 경우엔 붙일 곳이 없다. 예전에는 .single()로
+      // 조회하고 결과를 그냥 넘겨서, 그런 경우 녹음이 조용히 사라지고 화면은 완료로 넘어갔다.
       const { data: checkin } = await supabase
         .from("daily_checkin")
         .select("id")
         .eq("elder_profile_id", elderId)
         .eq("date", todaySeoul())
-        .single();
-      if (checkin?.id) {
+        .maybeSingle();
+      if (!checkin?.id) {
+        setError("오늘 안부를 먼저 마쳐야 말씀을 남길 수 있어요.");
+        setBusy(false);
+        return;
+      }
+      {
         // daily_checkin_id는 unique 제약이라 하루에 여러 번 녹음하면 insert가 아니라
         // 기존 행을 덮어써야 한다 — 예전엔 insert만 해서 두 번째 시도부터는 조용히
         // 실패하고 항상 첫 녹음만 남아있었다. 근거: 실사용 피드백 — "덮어쓰기가 안 된다"
@@ -59,7 +69,7 @@ export default function ESpeech() {
           .select("audio_url")
           .eq("daily_checkin_id", checkin.id)
           .maybeSingle();
-        const { data: voiceRow } = await supabase
+        const { data: voiceRow, error: voiceError } = await supabase
           .from("voice_response")
           .upsert(
             {
@@ -81,6 +91,11 @@ export default function ESpeech() {
           )
           .select("id")
           .single();
+        if (voiceError) {
+          setError("말씀을 저장하지 못했어요. 잠시 후 다시 시도해주세요.");
+          setBusy(false);
+          return;
+        }
         if (existing?.audio_url) await deleteFromBucket("voice", existing.audio_url).catch(() => {});
         // 분석 요청은 fire-and-forget — 실패해도 하루 기록은 그대로 인정된다
         if (voiceRow?.id) {
@@ -111,6 +126,7 @@ export default function ESpeech() {
       <h1 className="e-question">{topic}</h1>
       <p className="e-lead">천천히 말씀하시면 됩니다</p>
       <RecordingNotice />
+      {error && <p className="e-error">{error}</p>}
 
       {!recording && (
         <button className="e-primary" onClick={start} disabled={busy}>

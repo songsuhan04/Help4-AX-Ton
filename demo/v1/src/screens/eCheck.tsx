@@ -40,6 +40,7 @@ export default function ECheck() {
   const [answers, setAnswers] = useState<AnsweredQuestion[]>([]);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!supabaseConfigured) {
@@ -138,13 +139,20 @@ export default function ECheck() {
   async function finish(finalAnswers: AnsweredQuestion[]) {
     const elderId = getStoredElderProfileId();
     const date = todaySeoul();
-    await getSupabase()
+    setSaveError(null);
+    // 저장 결과를 확인한다. 예전에는 그냥 넘어가서, 저장이 실패해도 어르신은 안부를 전한
+    // 줄 알고 화면을 떠났다. 보호자에게는 아무것도 남지 않는다.
+    const { error } = await getSupabase()
       .from("daily_checkin")
       .upsert(
         { elder_profile_id: elderId, date, answers: finalAnswers, skipped: false, questions },
         { onConflict: "elder_profile_id,date" }
       );
-    // 위험도 계산은 fire-and-forget — 실패해도 하루 기록은 이미 저장되어 있다
+    if (error) {
+      setSaveError("안부를 저장하지 못했어요. 잠시 후 다시 눌러주세요.");
+      return;
+    }
+    // 위험도 계산은 fire-and-forget — 여기까지 왔으면 하루 기록은 이미 저장되어 있다
     fetch("/api/assess-risk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -166,6 +174,14 @@ export default function ECheck() {
         <DisplaySettings />
         <span className="e-brand">Callog</span>
       </div>
+      {saveError && (
+        <>
+          <p className="e-error">{saveError}</p>
+          <button className="e-primary" onClick={() => finish(answers)}>
+            다시 보내기
+          </button>
+        </>
+      )}
       <ProgressBar current={index + 1} total={questions.length} />
       <h1 className="e-question">{question.question}</h1>
       <SpeakButton text={question.question} />

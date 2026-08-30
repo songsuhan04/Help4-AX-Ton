@@ -15,6 +15,9 @@ const PRYING = /주민등록|계좌|비밀번호|카드번호|재산|돈이\s*�
 
 const MIN_LENGTH = 8;
 const MAX_LENGTH = 60;
+// 상한을 늘리는 대신 프롬프트에서 더 짧게 요구한다. 첫 운영 결과 생성된 문장이 39~59자로
+// 상한에 바짝 붙어 있었고 주제의 절반 넘게 길이로 탈락했다. 어르신 화면의 큰 글씨 제목
+// 한 줄로 들어가는 문장이라, 짧은 편이 탈락률뿐 아니라 읽기에도 낫다.
 
 export interface TopicRejection {
   reason: string;
@@ -56,7 +59,7 @@ function buildTopicPrompt(context: {
 최근에 이미 쓴 주제(반복 금지): ${context.recentTopics.length ? context.recentTopics.join(" / ") : "(없음)"}
 
 규칙:
-1. 짧고 다정한 존댓말 한 문장. 8자 이상 60자 이하.
+1. 짧고 다정한 존댓말 한 문장. 35자 안팎으로 짧게 쓰고, 어떤 경우에도 55자를 넘기지 마세요.\n   어르신 화면에 큰 글씨 제목으로 들어가므로 길면 읽기 어렵습니다.
 2. 어르신이 편하게 이야기를 시작할 수 있는 열린 주제로 만드세요.
 3. 최근 답변에 자연스럽게 이어지는 주제라면 더 좋습니다. 다만 아픈 이야기를 캐묻지는 마세요.
 4. 의료 조언(처방·복용량·병원 방문 권유)은 절대 하지 마세요. 이 서비스는 의료기기가 아닙니다.
@@ -72,6 +75,8 @@ export interface GeneratedTopics {
   speechTopic: string | null;
   letterTopic: string | null;
   source: "gemini" | "fallback";
+  // 버려진 이유. 로그는 한 시간이면 사라지므로 부르는 쪽이 DB에 남긴다.
+  notes: { speech?: string; letter?: string };
 }
 
 /**
@@ -82,7 +87,7 @@ export async function generateTopics(
   geminiKey: string | undefined,
   context: { conditions: string[]; recentAnswers: string[]; recentTopics: string[] }
 ): Promise<GeneratedTopics> {
-  if (!geminiKey) return { speechTopic: null, letterTopic: null, source: "fallback" };
+  if (!geminiKey) return { speechTopic: null, letterTopic: null, source: "fallback", notes: {} };
   try {
     const resp = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiKey}`,
@@ -115,9 +120,18 @@ export async function generateTopics(
       letterTopic,
       // 둘 다 걸렀다면 AI가 쓸모 있는 걸 못 준 것이므로 fallback으로 기록한다
       source: speechTopic || letterTopic ? "gemini" : "fallback",
+      notes: {
+        ...(speechReject ? { speech: speechReject.reason } : {}),
+        ...(letterReject ? { letter: letterReject.reason } : {}),
+      },
     };
   } catch (err) {
     console.error("generateTopics: falling back", err instanceof Error ? err.message : err);
-    return { speechTopic: null, letterTopic: null, source: "fallback" };
+    return {
+      speechTopic: null,
+      letterTopic: null,
+      source: "fallback",
+      notes: { speech: "request_failed", letter: "request_failed" },
+    };
   }
 }

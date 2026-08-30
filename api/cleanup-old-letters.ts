@@ -12,6 +12,10 @@ import { todaySeoul } from "../lib/seoulDate";
 //
 // 두 일이 성격은 다르지만 크론을 나누지 않았다. Vercel Hobby 플랜은 크론 개수와 실행 횟수가
 // 제한되고, 마침 이 크론이 도는 새벽 3시가 그날 것을 미리 만들기에 딱 맞는 시각이다.
+// Vercel Hobby 플랜에서 함수가 돌 수 있는 최대 시간. 명시하지 않으면 더 짧은 기본값으로
+// 잘려서, 어르신 수가 늘면 주제를 다 만들지 못한 채 끊긴다(실제로 9명 중 4명에서 끊겼다).
+export const config = { maxDuration: 60 };
+
 const RETENTION_DAYS = 7;
 // 한 번 실행에서 처리할 최대 건수 — 크론이 오래 밀렸다가 재개되는 경우를 대비한 안전장치
 const MAX_PER_RUN = 500;
